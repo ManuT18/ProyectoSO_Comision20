@@ -5,7 +5,6 @@
  * No puede invocar los comandos mediante la función system, y para la implementación de los mismos debe utilizar llamadas al sistema (system-calls) o funciones de librerías.
  * 
  * Los minimos comandos que debe tener son los siguientes:
- * 
  * (a) Mostrar una ayuda con los comandos disponibles.
  * (b) Crear un directorio
  * (c) Eliminar un directorio
@@ -27,15 +26,28 @@
 // Función para mostrar la ayuda con los comandos disponibles
 void mostrar_ayuda() {
     printf("Comandos disponibles:\n");
-    printf("ayuda - Mostrar este mensaje de ayuda\n");
+    printf("help - Mostrar este mensaje de ayuda\n");
     printf("mkdir <directorio> - Crear un directorio\n");
     printf("rmdir <directorio> - Eliminar un directorio\n");
     printf("touch <archivo> - Crear un archivo\n");
     printf("ls <directorio> - Listar el contenido de un directorio\n");
     printf("cat <archivo> - Mostrar el contenido de un archivo\n");
     printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo\n");
-    printf("salir - Salir del shell\n");
+    printf("exit - Salir del shell\n");
     printf("version - Mostrar la versión del shell\n");
+    printf("about - Mostrar información sobre el shell\n");
+    printf("clear - Limpiar la pantalla\n");
+    fflush(stdout);
+}
+
+void limpiar_pantalla() {
+    // https://stackoverflow.com/questions/37774983/clearing-the-screen-by-printing-a-character
+    printf("\033[H\033[J"); // código de escape ANSI para limpiar la pantalla
+    fflush(stdout);
+}
+
+void mostrar_funcionando() {
+    printf("Funcionando!\n");
     fflush(stdout);
 }
 
@@ -149,9 +161,8 @@ int main() {
         if (args[0] == NULL) {
             continue; // reintentar si no se ingresó algún comando
         } else if (strcmp(args[0], "test") == 0) {
-            printf("Funcionando!\n");
-            fflush(stdout);
-        } else if (strcmp(args[0], "ayuda") == 0) {
+            mostrar_funcionando();
+        } else if (strcmp(args[0], "help") == 0) {
             mostrar_ayuda();
         } else if (strcmp(args[0], "mkdir") == 0 && args[1] != NULL) {
             crear_directorio(args[1]);
@@ -165,13 +176,14 @@ int main() {
             mostrar_contenido_archivo(args[1]);
         } else if (strcmp(args[0], "chmod") == 0 && args[1] != NULL && args[2] != NULL) {
             cambiar_permisos_archivo(args[1], args[2]);
-        } else if (strcmp(args[0], "salir") == 0) {
+        } else if (strcmp(args[0], "exit") == 0) {
             break;
         } else if (strcmp(args[0], "about") == 0) {
             mostrar_about();
-        }
-        else if (strcmp(args[0], "version") == 0) {
+        } else if (strcmp(args[0], "version") == 0) {
             mostrar_version();
+        } else if (strcmp(args[0], "clear") == 0) {
+            limpiar_pantalla();
         } else {
             printf("Comando desconocido: %s\n", args[0]);
         }
