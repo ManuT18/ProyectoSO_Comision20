@@ -12,75 +12,84 @@
 sem_t sem_ruedas, sem_chasis, sem_motor, sem_pintura, sem_extras;
 pthread_t threads[6];
 
+//
 #define ITERATIONS 7
 
 void *process_ruedas()
 {
-    for(int i=0; i<ITERATIONS; i++){
+    for (int i = 0; i < ITERATIONS; i++)
+    {
         sem_wait(&sem_ruedas);
         printf("Rueda \n");
         fflush(stdout);
         sem_post(&sem_chasis);
-        
+
         printf("Rueda \n");
         fflush(stdout);
         sem_post(&sem_chasis);
-    }    
+    }
     return NULL;
 }
 
 void *process_chasis()
 {
-    for(int i=0; i<ITERATIONS; i++){
-    sem_wait(&sem_chasis);
-    sem_wait(&sem_chasis);
-    printf("Chasis\n");
-    fflush(stdout);
-    sem_post(&sem_motor);
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        sem_wait(&sem_chasis);
+        sem_wait(&sem_chasis);
+        printf("Chasis\n");
+        fflush(stdout);
+        sem_post(&sem_motor);
     }
     return NULL;
 }
 
 void *process_motor()
 {
-    for(int i=0; i<ITERATIONS; i++){
-    sem_wait(&sem_motor);
-    printf("Motor\n");
-    fflush(stdout);
-    sem_post(&sem_pintura);
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        sem_wait(&sem_motor);
+        printf("Motor\n");
+        fflush(stdout);
+        sem_post(&sem_pintura);
     }
     return NULL;
 }
 
 void *process_pinturaverde()
 {
-    for(int i=0; i<ITERATIONS; i++){
-    sem_wait(&sem_pintura);
-    printf("Pintura verde\n");
-    fflush(stdout);
-    sem_post(&sem_extras);
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        sem_wait(&sem_pintura);
+        printf("Pintura verde\n--------------------\n");
+        fflush(stdout);
+        sem_post(&sem_extras);
     }
     return NULL;
 }
 
 void *process_pinturaroja()
 {
-    for(int i=0; i<ITERATIONS; i++){
-    sem_wait(&sem_pintura);
-    printf("Pintura roja\n");
-    fflush(stdout);
-    sem_post(&sem_extras);
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        sem_wait(&sem_pintura);
+        printf("Pintura roja\n--------------------\n");
+        fflush(stdout);
+        sem_post(&sem_extras);
     }
     return NULL;
 }
 
 void *process_extras()
-{   
-    for(int i=0; i<ITERATIONS; i++){
-    sem_wait(&sem_extras);
-    printf("Extras\n\n");
-    fflush(stdout);
-    sem_post(&sem_ruedas);
+{
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        sem_wait(&sem_extras);
+        sem_post(&sem_ruedas);
+        sem_wait(&sem_extras);
+        printf("Extras añadidos\n--------------------\n");
+        fflush(stdout);
+        sem_post(&sem_ruedas);
     }
     return NULL;
 }
