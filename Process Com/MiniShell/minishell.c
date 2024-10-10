@@ -23,18 +23,19 @@
 #include <fcntl.h>
 #include <fts.h>
 
-void mostrar_funcionando();
-void mostrar_ayuda(char *args[]);
-void crear_directorio(char *dir);
-void eliminar_directorio(char *dir);
-void cambiar_directorio(char *directorio);
-void crear_archivo(char *archivo);
-void listar_directorio(char *dir);
-void mostrar_contenido_archivo(char *archivo);
-void cambiar_permisos_archivo(char *permisos, char *archivo);
-void mostrar_about();
-void mostrar_version();
-void limpiar_pantalla(char *args[]);
+void mostrar_funcionando(char **args);
+void mostrar_ayuda(char **args);
+void crear_directorio(char **args);
+void eliminar_directorio(char **args);
+void cambiar_directorio(char **args);
+void crear_archivo(char **args);
+void listar_directorio(char **args);
+void mostrar_contenido_archivo(char **args);
+void cambiar_permisos_archivo(char **args);
+void mostrar_about(char **args);
+void mostrar_version(char **args);
+void limpiar_pantalla(char **args);
+void salir(char **args);
 
 typedef struct {
     char *command;
@@ -54,12 +55,16 @@ Comando commands[] = {
     {"about", mostrar_about},
     {"version", mostrar_version},
     {"clear", limpiar_pantalla},
-    {"exit", exit},
+    {"exit", salir},
     {NULL, NULL}
 };
 
+void salir(char **args) {
+    exit(0);
+}
+
 // Función para mostrar la ayuda con los comandos disponibles
-void mostrar_ayuda(char *args[]) {
+void mostrar_ayuda(char **args) {
     printf("Comandos disponibles:\n");
     printf("help - Mostrar este mensaje de ayuda\n");
     printf("mkdir <directorio> - Crear un directorio\n");
@@ -77,59 +82,82 @@ void mostrar_ayuda(char *args[]) {
 }
 
 // implementación de "cd", cambiar directorio al que se pasa como argumento
-void cambiar_directorio(char *directorio) {
-    if (chdir(directorio) == -1) {
-        perror("chdir");
+void cambiar_directorio(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"cd\"\n");
+    } else {
+        if (chdir(args[1]) != 0) {
+            perror("minishell");
+        }
     }
 }
 
-void limpiar_pantalla(char *args[]) {
+void limpiar_pantalla(char **args) {
     // https://stackoverflow.com/questions/37774983/clearing-the-screen-by-printing-a-character
     printf("\033[H\033[J"); // código de escape ANSI para limpiar la pantalla
     fflush(stdout);
 }
 
-void mostrar_funcionando() {
+void mostrar_funcionando(char **args) {
     printf("Funcionando!\n");
     fflush(stdout);
 }
 
-void mostrar_about() {
+void mostrar_about(char **args) {
     printf("Minishell realizado por la comisión 20 de Sistemas Operativos.\n");
     fflush(stdout);
 }
 
-void mostrar_version() {
+void mostrar_version(char **args) {
     printf("Minishell v1.0\n");
     fflush(stdout);
 }
 
 // Función para crear un directorio con permisos 0755 (rwxr-xr-x)
-void crear_directorio(char *dir) {
-    if (mkdir(dir, 0755) == -1) {
-        perror("mkdir");
+void crear_directorio(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"mkdir\"\n");
+    } else {
+        if (mkdir(args[1], 0777) != 0) {
+            perror("minishell");
+        }
     }
 }
 
 // Función para eliminar un directorio
-void eliminar_directorio(char *dir) {
-    if (rmdir(dir) == -1) {
-        perror("rmdir");
+void eliminar_directorio(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"rmdir\"\n");
+    } else {
+        if (rmdir(args[1]) != 0) {
+            perror("minishell");
+        }
     }
 }
 
 // Función para crear un archivo con permisos 0644 (rw-r--r--)
-void crear_archivo(char *archivo) {
-    int fd = open(archivo, O_CREAT | O_WRONLY, 0644); 
-    if (fd == -1) {
-        perror("open");
+void crear_archivo(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"touch\"\n");
     } else {
-        close(fd); // Cerrar el archivo si se creó correctamente
+        FILE *file = fopen(args[1], "w");
+        if (file == NULL) {
+            perror("minishell");
+        } else {
+            fclose(file);
+        }
     }
 }
 
 // Función para listar el contenido de un directorio
-void listar_directorio(char *dir) {
+void listar_directorio(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"ls\"\n");
+        return;
+    }
+    char dir[256];
+    strcpy(dir, args[1]);
+    dir[sizeof(dir) - 1] = '\0'; // Asegurarse de que el directorio tenga un terminador nulo
     /*
     Usamos la librería FTS para recorrer el sistema de archivos de forma recursiva.
     Esta decisión se sustenta en que FTS es parte del estándar POSIX y proporciona una forma más sencilla de recorrer el sistema de archivos que otras alternativas como opendir/readdir/closedir o la librería dirent.
@@ -159,29 +187,32 @@ void listar_directorio(char *dir) {
 }
 
 // Función para mostrar el contenido de un archivo
-void mostrar_contenido_archivo(char *archivo) {
-    char buffer[1024];
-    FILE *file = fopen(archivo, "r");
-    if (file == NULL) {
-        perror("fopen");
-        return;
+void mostrar_contenido_archivo(char **args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "Expected argument to \"cat\"\n");
+    } else {
+        FILE *file = fopen(args[1], "r");
+        if (file == NULL) {
+            perror("minishell");
+        } else {
+            char ch;
+            while ((ch = fgetc(file)) != EOF) {
+                putchar(ch);
+            }
+            fclose(file);
+        }
     }
-    size_t bytes_leidos;
-    while ((bytes_leidos = fread(buffer, 1, sizeof(buffer) - 1, file)) > 0) {
-        buffer[bytes_leidos] = '\0'; // null terminated
-        printf("%s", buffer);
-    }
-    if (ferror(file)) {
-        perror("fread");
-    }
-    fclose(file);
 }
 
 // Función para cambiar los permisos de un archivo
-void cambiar_permisos_archivo(char *permisos, char *archivo) {
-    mode_t modo = strtol(permisos, NULL, 8); // convertir los permisos de string a octal
-    if (chmod(archivo, modo) == -1) {
-        perror("chmod");
+void cambiar_permisos_archivo(char **args) {
+    if (args[1] == NULL || args[2] == NULL) {
+        fprintf(stderr, "Expected arguments to \"chmod\"\n");
+    } else {
+        mode_t mode = strtol(args[1], NULL, 8);
+        if (chmod(args[2], mode) != 0) {
+            perror("minishell");
+        }
     }
 }
 

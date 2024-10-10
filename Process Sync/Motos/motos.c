@@ -126,3 +126,56 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
+
+/**
+ * Se bloquea:
+ * 
+ * Rueda 
+Rueda 
+Chasis
+Motor
+Pintura verde
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura verde
+--------------------
+Extras añadidos
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura roja
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura verde
+--------------------
+Extras añadidos
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura roja
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura verde
+--------------------
+Extras añadidos
+--------------------
+Rueda 
+Rueda 
+Chasis
+Motor
+Pintura roja
+--------------------
+ */
