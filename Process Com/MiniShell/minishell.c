@@ -37,6 +37,8 @@ void mostrar_version(char **args);
 void limpiar_pantalla(char **args);
 void salir(char **args);
 
+int permisos_a_octal(char *permisos);
+
 typedef struct {
     char *command;
     void (*function)(char **args);
@@ -47,10 +49,10 @@ Comando commands[] = {
     {"help", mostrar_ayuda},
     {"mkdir", crear_directorio},
     {"rmdir", eliminar_directorio},
-    {"cd", cambiar_directorio},
-    {"touch", crear_archivo},
-    {"ls", listar_directorio},
-    {"cat", mostrar_contenido_archivo},
+    {"chdir", cambiar_directorio},
+    {"mkfile", crear_archivo},
+    {"list", listar_directorio},
+    {"show", mostrar_contenido_archivo},
     {"chmod", cambiar_permisos_archivo},
     {"about", mostrar_about},
     {"version", mostrar_version},
@@ -84,8 +86,11 @@ void mostrar_ayuda(char **args) {
 // implementación de "cd", cambiar directorio al que se pasa como argumento
 void cambiar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"cd\"\n");
-        return;
+        // cambiar al directorio HOME
+        if (chdir(getenv("HOME")) != 0) {
+            fprintf(stderr, "minishell: Error al cambiar de directorio\n");
+            return;
+        }
     }
 
     if (chdir(args[1]) != 0) {
@@ -114,19 +119,18 @@ void mostrar_version(char **args) {
     fflush(stdout);
 }
 
-// Función para crear un directorio con permisos 0755 (rwxr-xr-x)
+// Función para crear un directorio con permisos 0666 (rw-rw-rw-)
 void crear_directorio(char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"mkdir\"\n");
         return;
     }
 
-    if (mkdir(args[1], 0777) != 0) {
+    if (mkdir(args[1], 0666) != 0) {
         fprintf(stderr, "minishell: Error al crear el directorio\n");
     }
 }
 
-// Función para eliminar un directorio
 void eliminar_directorio(char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"rmdir\"\n");
@@ -138,12 +142,13 @@ void eliminar_directorio(char **args) {
     }
 }
 
-// Función para crear un archivo con permisos 0644 (rw-r--r--)
+// Función para crear un archivo con permisos 0666 (rw-rw-rw-)
 void crear_archivo(char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"touch\"\n");
         return;
     }
+
     FILE *file = fopen(args[1], "w");
     if (file == NULL) {
         fprintf(stderr, "minishell: No se pudo abrir el archivo\n");
@@ -152,11 +157,10 @@ void crear_archivo(char **args) {
     }
 }
 
-// Función para listar el contenido de un directorio
 void listar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"ls\"\n");
-        return;
+        // listar el directorio actual
+        strcpy(args[1], ".");
     }
 
     char dir[256];
@@ -191,7 +195,6 @@ void listar_directorio(char **args) {
     }
 }
 
-// Función para mostrar el contenido de un archivo
 void mostrar_contenido_archivo(char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"cat\"\n");
@@ -217,24 +220,58 @@ void cambiar_permisos_archivo(char **args) {
         return;
     }
 
-    mode_t mode = strtol(args[1], NULL, 8);
-    if (chmod(args[2], mode) != 0) {
+    // el segundo argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
+    if (strlen(args[2]) != 9) {
+        fprintf(stderr, "minishell: Los permisos deben tener 9 caracteres\n");
+        return;
+    }
+
+    char *permisos = args[2];
+    int mode = permisos_a_octal(permisos);
+    printf("mode: %d\n", mode);
+    fflush(stdout);
+
+    if (chmod(args[1], mode) != 0) {
         fprintf(stderr, "minishell: Error al cambiar los permisos del archivo\n");
     }
 }
+
+// convierte un string de permisos a un número octal
+int permisos_a_octal(char *permisos) {
+    int octal = 0;
+    int valor = 0;
+
+    for (int i = 0; i < 3; i++) {
+        valor = 0;
+        if (permisos[i*3] == 'r') {
+            valor += 4;
+        }
+        if (permisos[i*3+1] == 'w') {
+            valor += 2;
+        }
+        if (permisos[i*3+2] == 'x') {
+            valor += 1;
+        }
+        octal = octal * 10 + valor;
+    }
+
+    return octal;
+}
+
 
 int main() {
     char comando[256];
     char *args[3];
     int active = 1;
 
+    // dar la ilusión de un shell
     while (active) {
-        // dar la ilusión de un shell
         // obtener y guardar en una variable la ubicación actual
         char cwd[1024];
 
         if (getcwd(cwd, sizeof(cwd)) == NULL) {
             fprintf(stderr, "minishell: No se pudo obtener el directorio actual\n");
+            strcpy(cwd, "");
         }
 
         printf("minishell>%s$ ", cwd);
@@ -242,7 +279,7 @@ int main() {
             active = 0;
         }
 
-        comando[strcspn(comando, "\n")] = '\0'; // no tome el enter
+        comando[strcspn(comando, "\n")] = '\0'; // para que no tome el enter
 
         args[0] = strtok(comando, " ");
         args[1] = strtok(NULL, " ");
