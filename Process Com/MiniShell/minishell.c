@@ -84,7 +84,7 @@ void mostrar_ayuda(char **args) {
 // implementación de "cd", cambiar directorio al que se pasa como argumento
 void cambiar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"cd\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"cd\"\n");
         return;
     }
 
@@ -117,7 +117,7 @@ void mostrar_version(char **args) {
 // Función para crear un directorio con permisos 0755 (rwxr-xr-x)
 void crear_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"mkdir\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"mkdir\"\n");
         return;
     }
 
@@ -129,24 +129,24 @@ void crear_directorio(char **args) {
 // Función para eliminar un directorio
 void eliminar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"rmdir\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"rmdir\"\n");
         return;
     }
 
     if (rmdir(args[1]) != 0) {
-        fprintf(stderr, "No se pudo eliminar el directorio\n");
+        fprintf(stderr, "minishell: No se pudo eliminar el directorio\n");
     }
 }
 
 // Función para crear un archivo con permisos 0644 (rw-r--r--)
 void crear_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"touch\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"touch\"\n");
         return;
     }
     FILE *file = fopen(args[1], "w");
     if (file == NULL) {
-        fprintf(stderr, "No se pudo abrir el archivo\n");
+        fprintf(stderr, "minishell: No se pudo abrir el archivo\n");
     } else {
         fclose(file);
     }
@@ -155,7 +155,7 @@ void crear_archivo(char **args) {
 // Función para listar el contenido de un directorio
 void listar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"ls\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"ls\"\n");
         return;
     }
 
@@ -194,7 +194,7 @@ void listar_directorio(char **args) {
 // Función para mostrar el contenido de un archivo
 void mostrar_contenido_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Se espera un argumento para \"cat\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"cat\"\n");
         return;
     }
 
@@ -213,7 +213,7 @@ void mostrar_contenido_archivo(char **args) {
 // Función para cambiar los permisos de un archivo
 void cambiar_permisos_archivo(char **args) {
     if (args[1] == NULL || args[2] == NULL) {
-        fprintf(stderr, "Se esperan argumentos para \"chmod\"\n");
+        fprintf(stderr, "minishell: Se esperan argumentos para \"chmod\"\n");
         return;
     }
 
@@ -234,7 +234,7 @@ int main() {
         char cwd[1024];
 
         if (getcwd(cwd, sizeof(cwd)) == NULL) {
-            fprintf(stderr, "No se pudo obtener el directorio actual\n");
+            fprintf(stderr, "minishell: No se pudo obtener el directorio actual\n");
         }
 
         printf("minishell>%s$ ", cwd);
