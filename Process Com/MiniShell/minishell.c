@@ -23,14 +23,50 @@
 #include <fcntl.h>
 #include <fts.h>
 
+void mostrar_funcionando();
+void mostrar_ayuda(char *args[]);
+void crear_directorio(char *dir);
+void eliminar_directorio(char *dir);
+void cambiar_directorio(char *directorio);
+void crear_archivo(char *archivo);
+void listar_directorio(char *dir);
+void mostrar_contenido_archivo(char *archivo);
+void cambiar_permisos_archivo(char *permisos, char *archivo);
+void mostrar_about();
+void mostrar_version();
+void limpiar_pantalla(char *args[]);
+
+typedef struct {
+    char *command;
+    void (*function)(char **args);
+} Comando;
+
+Comando commands[] = {
+    {"test", mostrar_funcionando},
+    {"help", mostrar_ayuda},
+    {"mkdir", crear_directorio},
+    {"rmdir", eliminar_directorio},
+    {"cd", cambiar_directorio},
+    {"touch", crear_archivo},
+    {"ls", listar_directorio},
+    {"cat", mostrar_contenido_archivo},
+    {"chmod", cambiar_permisos_archivo},
+    {"about", mostrar_about},
+    {"version", mostrar_version},
+    {"clear", limpiar_pantalla},
+    {"exit", exit},
+    {NULL, NULL}
+};
+
 // Función para mostrar la ayuda con los comandos disponibles
-void mostrar_ayuda() {
+void mostrar_ayuda(char *args[]) {
     printf("Comandos disponibles:\n");
     printf("help - Mostrar este mensaje de ayuda\n");
     printf("mkdir <directorio> - Crear un directorio\n");
     printf("rmdir <directorio> - Eliminar un directorio\n");
     printf("touch <archivo> - Crear un archivo\n");
     printf("ls <directorio> - Listar el contenido de un directorio\n");
+    printf("cd <directorio> - Cambiar el directorio actual\n");
     printf("cat <archivo> - Mostrar el contenido de un archivo\n");
     printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo\n");
     printf("exit - Salir del shell\n");
@@ -40,7 +76,14 @@ void mostrar_ayuda() {
     fflush(stdout);
 }
 
-void limpiar_pantalla() {
+// implementación de "cd", cambiar directorio al que se pasa como argumento
+void cambiar_directorio(char *directorio) {
+    if (chdir(directorio) == -1) {
+        perror("chdir");
+    }
+}
+
+void limpiar_pantalla(char *args[]) {
     // https://stackoverflow.com/questions/37774983/clearing-the-screen-by-printing-a-character
     printf("\033[H\033[J"); // código de escape ANSI para limpiar la pantalla
     fflush(stdout);
@@ -145,47 +188,39 @@ void cambiar_permisos_archivo(char *permisos, char *archivo) {
 int main() {
     char comando[256];
     char *args[3];
+    int active = 1;
 
-    while (1) {
+    while (active) {
         // dar la ilusión de un shell
-        printf("minishell> ");
+        // obtener y guardar en una variable la ubicación actual
+        char cwd[1024];
+        if (getcwd(cwd, sizeof(cwd)) == NULL) {
+            perror("getcwd");
+        }
+        // cortar el path de cwd para que sea relativo
+        printf("minishell>%s$ ", cwd);
         if (fgets(comando, sizeof(comando), stdin) == NULL) {
             break; // Salir del bucle si fgets falla
         }
-        comando[strcspn(comando, "\n")] = '\0'; // Eliminar el salto de línea
+        comando[strcspn(comando, "\n")] = '\0'; // no toma el enter
 
         args[0] = strtok(comando, " ");
         args[1] = strtok(NULL, " ");
         args[2] = strtok(NULL, " ");
 
-        if (args[0] == NULL) {
-            continue; // reintentar si no se ingresó algún comando
-        } else if (strcmp(args[0], "test") == 0) {
-            mostrar_funcionando();
-        } else if (strcmp(args[0], "help") == 0) {
-            mostrar_ayuda();
-        } else if (strcmp(args[0], "mkdir") == 0 && args[1] != NULL) {
-            crear_directorio(args[1]);
-        } else if (strcmp(args[0], "rmdir") == 0 && args[1] != NULL) {
-            eliminar_directorio(args[1]);
-        } else if (strcmp(args[0], "touch") == 0 && args[1] != NULL) {
-            crear_archivo(args[1]);
-        } else if (strcmp(args[0], "ls") == 0 && args[1] != NULL) {
-            listar_directorio(args[1]);
-        } else if (strcmp(args[0], "cat") == 0 && args[1] != NULL) {
-            mostrar_contenido_archivo(args[1]);
-        } else if (strcmp(args[0], "chmod") == 0 && args[1] != NULL && args[2] != NULL) {
-            cambiar_permisos_archivo(args[1], args[2]);
-        } else if (strcmp(args[0], "exit") == 0) {
-            break;
-        } else if (strcmp(args[0], "about") == 0) {
-            mostrar_about();
-        } else if (strcmp(args[0], "version") == 0) {
-            mostrar_version();
-        } else if (strcmp(args[0], "clear") == 0) {
-            limpiar_pantalla();
-        } else {
+        int i;
+        int found = 0;
+        for (i = 0; commands[i].command != NULL; i++) {
+            if (strcmp(args[0], commands[i].command) == 0) {
+                commands[i].function(args);
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
             printf("Comando desconocido: %s\n", args[0]);
+            fflush(stdout);
         }
     }
 
