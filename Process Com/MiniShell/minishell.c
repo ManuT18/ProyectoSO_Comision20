@@ -84,11 +84,12 @@ void mostrar_ayuda(char **args) {
 // implementación de "cd", cambiar directorio al que se pasa como argumento
 void cambiar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"cd\"\n");
-    } else {
-        if (chdir(args[1]) != 0) {
-            perror("minishell");
-        }
+        fprintf(stderr, "Se espera un argumento para \"cd\"\n");
+        return;
+    }
+
+    if (chdir(args[1]) != 0) {
+        fprintf(stderr, "minishell: Error al cambiar de directorio\n");
     }
 }
 
@@ -116,48 +117,52 @@ void mostrar_version(char **args) {
 // Función para crear un directorio con permisos 0755 (rwxr-xr-x)
 void crear_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"mkdir\"\n");
-    } else {
-        if (mkdir(args[1], 0777) != 0) {
-            perror("minishell");
-        }
+        fprintf(stderr, "Se espera un argumento para \"mkdir\"\n");
+        return;
+    }
+
+    if (mkdir(args[1], 0777) != 0) {
+        fprintf(stderr, "minishell: Error al crear el directorio\n");
     }
 }
 
 // Función para eliminar un directorio
 void eliminar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"rmdir\"\n");
-    } else {
-        if (rmdir(args[1]) != 0) {
-            perror("minishell");
-        }
+        fprintf(stderr, "Se espera un argumento para \"rmdir\"\n");
+        return;
+    }
+
+    if (rmdir(args[1]) != 0) {
+        fprintf(stderr, "No se pudo eliminar el directorio\n");
     }
 }
 
 // Función para crear un archivo con permisos 0644 (rw-r--r--)
 void crear_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"touch\"\n");
+        fprintf(stderr, "Se espera un argumento para \"touch\"\n");
+        return;
+    }
+    FILE *file = fopen(args[1], "w");
+    if (file == NULL) {
+        fprintf(stderr, "No se pudo abrir el archivo\n");
     } else {
-        FILE *file = fopen(args[1], "w");
-        if (file == NULL) {
-            perror("minishell");
-        } else {
-            fclose(file);
-        }
+        fclose(file);
     }
 }
 
 // Función para listar el contenido de un directorio
 void listar_directorio(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"ls\"\n");
+        fprintf(stderr, "Se espera un argumento para \"ls\"\n");
         return;
     }
+
     char dir[256];
     strcpy(dir, args[1]);
-    dir[sizeof(dir) - 1] = '\0'; // Asegurarse de que el directorio tenga un terminador nulo
+    dir[sizeof(dir) - 1] = '\0'; // null terminated
+    
     /*
     Usamos la librería FTS para recorrer el sistema de archivos de forma recursiva.
     Esta decisión se sustenta en que FTS es parte del estándar POSIX y proporciona una forma más sencilla de recorrer el sistema de archivos que otras alternativas como opendir/readdir/closedir o la librería dirent.
@@ -170,7 +175,7 @@ void listar_directorio(char **args) {
     FTS *ftsp = fts_open(paths, FTS_NOCHDIR | FTS_PHYSICAL, NULL); 
     
     if (ftsp == NULL) {
-        perror("fts_open");
+        fprintf(stderr, "minishell: Error al abrir el sistema de archivos\n");
         return;
     }
 
@@ -182,37 +187,39 @@ void listar_directorio(char **args) {
     }
 
     if (fts_close(ftsp) < 0) {
-        perror("fts_close");
+        fprintf(stderr, "minishell: Error al cerrar el sistema de archivos\n");
     }
 }
 
 // Función para mostrar el contenido de un archivo
 void mostrar_contenido_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "Expected argument to \"cat\"\n");
-    } else {
-        FILE *file = fopen(args[1], "r");
-        if (file == NULL) {
-            perror("minishell");
-        } else {
-            char ch;
-            while ((ch = fgetc(file)) != EOF) {
-                putchar(ch);
-            }
-            fclose(file);
-        }
+        fprintf(stderr, "Se espera un argumento para \"cat\"\n");
+        return;
     }
+
+    FILE *file = fopen(args[1], "r");
+    if (file == NULL) {
+        fprintf(stderr, "minishell: Error al abrir el archivo\n");
+        return;
+    }
+    char ch;
+    while ((ch = fgetc(file)) != EOF) {
+        putchar(ch);
+    }
+    fclose(file);
 }
 
 // Función para cambiar los permisos de un archivo
 void cambiar_permisos_archivo(char **args) {
     if (args[1] == NULL || args[2] == NULL) {
-        fprintf(stderr, "Expected arguments to \"chmod\"\n");
-    } else {
-        mode_t mode = strtol(args[1], NULL, 8);
-        if (chmod(args[2], mode) != 0) {
-            perror("minishell");
-        }
+        fprintf(stderr, "Se esperan argumentos para \"chmod\"\n");
+        return;
+    }
+
+    mode_t mode = strtol(args[1], NULL, 8);
+    if (chmod(args[2], mode) != 0) {
+        fprintf(stderr, "minishell: Error al cambiar los permisos del archivo\n");
     }
 }
 
@@ -225,28 +232,31 @@ int main() {
         // dar la ilusión de un shell
         // obtener y guardar en una variable la ubicación actual
         char cwd[1024];
+
         if (getcwd(cwd, sizeof(cwd)) == NULL) {
-            perror("getcwd");
+            fprintf(stderr, "No se pudo obtener el directorio actual\n");
         }
-        // cortar el path de cwd para que sea relativo
+
         printf("minishell>%s$ ", cwd);
         if (fgets(comando, sizeof(comando), stdin) == NULL) {
-            break; // Salir del bucle si fgets falla
+            active = 0;
         }
-        comando[strcspn(comando, "\n")] = '\0'; // no toma el enter
+
+        comando[strcspn(comando, "\n")] = '\0'; // no tome el enter
 
         args[0] = strtok(comando, " ");
         args[1] = strtok(NULL, " ");
         args[2] = strtok(NULL, " ");
 
-        int i;
         int found = 0;
-        for (i = 0; commands[i].command != NULL; i++) {
+        int i = 0;
+
+        while (!found && commands[i].command != NULL) {
             if (strcmp(args[0], commands[i].command) == 0) {
                 commands[i].function(args);
                 found = 1;
-                break;
             }
+            i++;
         }
 
         if (!found) {
