@@ -37,7 +37,7 @@ void mostrar_version(char **args);
 void limpiar_pantalla(char **args);
 void salir(char **args);
 
-int permisos_a_octal(char *permisos);
+char* permisos_a_modo_octal(char *permisos);
 
 typedef struct {
     char *command;
@@ -71,10 +71,10 @@ void mostrar_ayuda(char **args) {
     printf("help - Mostrar este mensaje de ayuda\n");
     printf("mkdir <directorio> - Crear un directorio\n");
     printf("rmdir <directorio> - Eliminar un directorio\n");
-    printf("touch <archivo> - Crear un archivo\n");
-    printf("ls <directorio> - Listar el contenido de un directorio\n");
-    printf("cd <directorio> - Cambiar el directorio actual\n");
-    printf("cat <archivo> - Mostrar el contenido de un archivo\n");
+    printf("mkfile <archivo> - Crear un archivo\n");
+    printf("list <directorio> - Listar el contenido de un directorio\n");
+    printf("chdir <directorio> - Cambiar el directorio actual\n");
+    printf("show <archivo> - Mostrar el contenido de un archivo\n");
     printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo\n");
     printf("exit - Salir del shell\n");
     printf("version - Mostrar la versión del shell\n");
@@ -221,28 +221,45 @@ void cambiar_permisos_archivo(char **args) {
     }
 
     // el segundo argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
-    if (strlen(args[2]) != 9) {
+    if (strlen(args[1]) != 9) {
         fprintf(stderr, "minishell: Los permisos deben tener 9 caracteres\n");
         return;
     }
 
-    char *permisos = args[2];
-    int mode = permisos_a_octal(permisos);
+    char *mode_str = permisos_a_modo_octal(args[1]);
+    if (mode_str == NULL) {
+        return;
+    }
+    mode_t mode = strtol(mode_str, 0, 8);
+    char *file = args[2];
     printf("mode: %d\n", mode);
     fflush(stdout);
 
-    if (chmod(args[1], mode) != 0) {
+    if (chmod(file, mode) != 0) {
         fprintf(stderr, "minishell: Error al cambiar los permisos del archivo\n");
     }
 }
 
-// convierte un string de permisos a un número octal
-int permisos_a_octal(char *permisos) {
-    int octal = 0;
+// convierte un string de permisos a un string en octal
+char* permisos_a_modo_octal(char *permisos) {
+    static char octal[5];
     int valor = 0;
 
     for (int i = 0; i < 3; i++) {
         valor = 0;
+        if (permisos[i*3] != 'r' && permisos[i*3] != '-') {
+            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3]);
+            return NULL;
+        }
+        if (permisos[i*3+1] != 'w' && permisos[i*3+1] != '-') {
+            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3+1]);
+            return NULL;
+        }
+        if (permisos[i*3+2] != 'x' && permisos[i*3+2] != '-') {
+            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3+2]);
+            return NULL;
+        }
+
         if (permisos[i*3] == 'r') {
             valor += 4;
         }
@@ -252,8 +269,10 @@ int permisos_a_octal(char *permisos) {
         if (permisos[i*3+2] == 'x') {
             valor += 1;
         }
-        octal = octal * 10 + valor;
+        octal[i+1] = '0' + valor; // índice corrido para dejar el primer carácter como '0'
     }
+    octal[4] = '\0';
+    octal[0] = '0';
 
     return octal;
 }
