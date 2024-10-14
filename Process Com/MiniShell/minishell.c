@@ -68,6 +68,7 @@ void salir(char **args) {
 // Función para mostrar la ayuda con los comandos disponibles
 void mostrar_ayuda(char **args) {
     printf("Comandos disponibles:\n");
+    printf("version - Mostrar la versión del shell\n");
     printf("help - Mostrar este mensaje de ayuda\n");
     printf("mkdir <directorio> - Crear un directorio\n");
     printf("rmdir <directorio> - Eliminar un directorio\n");
@@ -75,11 +76,10 @@ void mostrar_ayuda(char **args) {
     printf("list <directorio> - Listar el contenido de un directorio\n");
     printf("chdir <directorio> - Cambiar el directorio actual\n");
     printf("show <archivo> - Mostrar el contenido de un archivo\n");
-    printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo\n");
-    printf("exit - Salir del shell\n");
-    printf("version - Mostrar la versión del shell\n");
-    printf("about - Mostrar información sobre el shell\n");
+    printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo, especificados en formato string\n");
     printf("clear - Limpiar la pantalla\n");
+    printf("about - Mostrar información sobre el shell\n");
+    printf("exit - Salir del shell\n");
     fflush(stdout);
 }
 
