@@ -220,7 +220,7 @@ void cambiar_permisos_archivo(char **args) {
         return;
     }
 
-    // el segundo argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
+    // el primer argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
     if (strlen(args[1]) != 9) {
         fprintf(stderr, "minishell: Los permisos deben tener 9 caracteres\n");
         return;
