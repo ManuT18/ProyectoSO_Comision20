@@ -13,6 +13,12 @@
  * (b) Resuelve el mismo problema pero utilizando colas de mensajes, detalle las políticas seleccionadas para el modelo, diseño e implementación. ¿Tiene alguna ventaja esta implementación?
  */
 
+
+/**
+ * Modelo:
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
