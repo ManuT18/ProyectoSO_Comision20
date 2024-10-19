@@ -24,6 +24,13 @@
  *  - Pipes para la comunicación entre el despachador y los empleados.
  *  - Pipes para la comunicación entre los empleados y el despachador.
  *  - Pipes para la comunicación entre el despachador y los clientes.
+ * 
+ * Un cliente llega a donde el despachador, le indica su pedido y espera a que el despachador le indique que su pedido está listo.
+ * Dentro de este pedido se incluye la credencial del cliente.
+ * Todos los empleados van a tener hilos. 
+ *  - En el caso del despachador, va a tener tres: uno es para atender clientes, el otro para indicarle a los cocineros qué deben cocinar y esperar por la realización de un pedido que venga de un cliente común, y el otro hilo es para lo mismo pero del cliente VIP. Es importante que el despachador utilice ambos hilos dado que, si llegara un cliente VIP después de uno común, su pedido debería ser atendido, en lugar de que espere.
+ *  - En el caso de los cocineros, uno es para preparar el pedido de los clientes comunes, y el otro es para preparar el pedido de los clientes VIP. Esto simula la situación en que el despachador les diga "che, esto es para un VIP" y se pongan a preparar la orden a la par.
+ 
  */
 
 #define REPETITIONS 100
@@ -36,8 +43,7 @@
 
 // Primero vamos a resolver el problema considerando solo a los clientes simples (no VIPs).
 int main() {
-
-    int confirmation;
+    int confirmation = 1;
 
     int pipe_C_D[2]; // pipe para la comunicación entre Cliente (C) y Despachador (D)
     int pipe_D_H[2]; // pipe para la comunicación entre Despachador (D) y Hamburguesero (H)
@@ -58,8 +64,8 @@ int main() {
     pipe(pipe_D_C);
 
     pid_t pid_H = fork();
-    if (pid_H == 0) {
-        // Proceso Hamburguesero
+    if (pid_H == 0) { // Proceso Hamburguesero
+        
         close(pipe_H_D[0]);
         close(pipe_D_H[1]);
 
@@ -75,8 +81,8 @@ int main() {
     }
 
     pid_t pid_V = fork();
-    if (pid_V == 0) {
-        // Proceso Vegano
+    if (pid_V == 0) { // Proceso Vegano
+        
         close(pipe_V_D[0]);
         close(pipe_D_V[1]);
 
@@ -92,8 +98,8 @@ int main() {
     }
 
     pid_t pid_P = fork();
-    if (pid_P == 0) {
-        // Proceso PapaFritero
+    if (pid_P == 0) { // Proceso PapaFritero
+        
         close(pipe_P_D[0]);
         close(pipe_D_P[1]);
 
@@ -109,8 +115,8 @@ int main() {
     }
 
     pid_t pid_D = fork();
-    if (pid_D == 0) {
-        // Proceso Despachador
+    if (pid_D == 0) { // Proceso Despachador
+        
         close(pipe_D_H[0]);
         close(pipe_D_V[0]);
         close(pipe_D_P[0]);
@@ -143,8 +149,8 @@ int main() {
     }
 
     pid_t pid_C = fork();
-    if (pid_C == 0) {
-        // Proceso Cliente
+    if (pid_C == 0) { // Proceso Cliente
+        
         close(pipe_C_D[0]);
         close(pipe_D_C[1]);
 
