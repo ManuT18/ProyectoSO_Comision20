@@ -163,8 +163,9 @@ int main() {
 
         // decidir aleatoriamente que el cliente sea vip o común
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             // Enviar pedido al Despachador
+            sleep(1);
             printf("Cliente: Realizando pedido\n");
             fflush(stdout);
             pedido_comun = i+1;
@@ -172,6 +173,7 @@ int main() {
             // Esperar pedido del Despachador
             read(pipe_D_C[0], &pedido_comun, sizeof(int));
             printf("Cliente: Marchándome con el pedido\n");
+            printf("---------\n");
             fflush(stdout);
         }
         exit(0);
@@ -191,6 +193,7 @@ void *pedidos_comunes() {
     switch (pedido_comun) {
         case 1:
             printf("Despachador: Pedido de hamburguesa\n");
+            fflush(stdout);
             write(pipe_D_H[1], &pedido_comun, sizeof(int));
 
             read(pipe_H_D[0], &pedido_comun, sizeof(int));
@@ -199,6 +202,7 @@ void *pedidos_comunes() {
             break;
         case 2:
             printf("Despachador: Pedido de menú vegano\n");
+            fflush(stdout);
             write(pipe_D_V[1], &pedido_comun, sizeof(int));
 
             read(pipe_V_D[0], &pedido_comun, sizeof(int));
@@ -207,6 +211,7 @@ void *pedidos_comunes() {
             break;
         case 3:
             printf("Despachador: Pedido de papas fritas\n");
+            fflush(stdout);
             write(pipe_D_P[1], &pedido_comun, sizeof(int));
 
             read(pipe_P_D[0], &pedido_comun, sizeof(int));
@@ -215,6 +220,7 @@ void *pedidos_comunes() {
             break;
         case 4:
             printf("Despachador: Pedido de hamburguesa y menú vegano\n");
+            fflush(stdout);
             write(pipe_D_H[1], &pedido_comun, sizeof(int));
             write(pipe_D_V[1], &pedido_comun, sizeof(int));
 
@@ -225,6 +231,7 @@ void *pedidos_comunes() {
             break;
         case 5:
             printf("Despachador: Pedido de hamburguesa y papas fritas\n");
+            fflush(stdout);
             write(pipe_D_H[1], &pedido_comun, sizeof(int));
             write(pipe_D_P[1], &pedido_comun, sizeof(int));
 
@@ -235,6 +242,7 @@ void *pedidos_comunes() {
             break;
         case 6:
             printf("Despachador: Pedido de menú vegano y papas fritas\n");
+            fflush(stdout);
             write(pipe_D_V[1], &pedido_comun, sizeof(int));
             write(pipe_D_P[1], &pedido_comun, sizeof(int));
 
@@ -289,38 +297,43 @@ void *pedidos_vip() {
 }
 
 void *hamburguesas() {
-
-    // Esperar pedido del Despachador
-    read(pipe_D_H[0], &pedido_comun, sizeof(int));
-    // Preparar hamburguesa
-    printf("Hamburguesero: Preparando hamburguesa\n");
-    fflush(stdout);
-    // Enviar hamburguesa al Despachador
-    write(pipe_H_D[1], &pedido_comun, sizeof(int));
+    while (1) {
+        // Esperar pedido del Despachador
+        read(pipe_D_H[0], &pedido_comun, sizeof(int));
+        // Preparar hamburguesa
+        printf("Hamburguesero: Preparando hamburguesa\n");
+        fflush(stdout);
+        // Enviar hamburguesa al Despachador
+        write(pipe_H_D[1], &pedido_comun, sizeof(int));
+    }
 
     return NULL;
 }
 
 void *vegano() {
-    // Esperar pedido del Despachador
-    read(pipe_D_V[0], &pedido_comun, sizeof(int));
-    // Preparar menú vegano
-    printf("Vegano: Preparando menú vegano\n");
-    fflush(stdout);
-    // Enviar menú vegano al Despachador
-    write(pipe_V_D[1], &pedido_comun, sizeof(int));
+    while (1) {
+        // Esperar pedido del Despachador
+        read(pipe_D_V[0], &pedido_comun, sizeof(int));
+        // Preparar menú vegano
+        printf("Vegano: Preparando menú vegano\n");
+        fflush(stdout);
+        // Enviar menú vegano al Despachador
+        write(pipe_V_D[1], &pedido_comun, sizeof(int));
+    }
 
     return NULL;
 }
 
 void *papas() {
-    // Esperar pedido del Despachador
-    read(pipe_D_P[0], &pedido_comun, sizeof(int));
-    // Preparar papas fritas
-    printf("PapaFritero: Preparando papas fritas\n");
-    fflush(stdout);
-    // Enviar papas fritas al Despachador
-    write(pipe_P_D[1], &pedido_comun, sizeof(int));
+    while (1) {
+        // Esperar pedido del Despachador
+        read(pipe_D_P[0], &pedido_comun, sizeof(int));
+        // Preparar papas fritas
+        printf("PapaFritero: Preparando papas fritas\n");
+        fflush(stdout);
+        // Enviar papas fritas al Despachador
+        write(pipe_P_D[1], &pedido_comun, sizeof(int));
+    }
 
     return NULL;
 }
