@@ -49,27 +49,125 @@
 #include <signal.h>
 #include <fcntl.h>
 
-void *atender_pedidos();
+void *despachar_pedidos();
 
 int pedido;
 
 int pipe_CN_D[2]; // pipe para la comunicación entre Cliente Normal (CN) y Despachador (D)
 int pipe_CV_D[2]; // pipe para la comunicación entre Cliente VIP (CV) y Despachador (D)
 int pipe_D_H[2]; // pipe para la comunicación entre Despachador (D) y Hamburguesero (H)
-int pipe_D_V[2]; // pipe para la comunicación entre Despachador (D) y Vegano (V)
+int pipe_D_V[2]; // pipe para la comunicación entre Despachador (D) y el cocinero del Menú Vegano (V)
 int pipe_D_P[2]; // pipe para la comunicación entre Despachador (D) y los PapaFriteros (P)
 int pipe_H_D[2]; // pipe para la comunicación entre Hamburguesero (H) y Despachador (D)
 int pipe_V_D[2]; // pipe para la comunicación entre Vegano (V) y Despachador (D)
 int pipe_P_D[2]; // pipe para la comunicación entre PapaFritero y Despachador (D)
-int pipe_D_CN_H[2]; // pipe para la comunicación entre Despachador (D) y Cliente Normal (CN) para hamburguesas
-int pipe_D_CN_V[2]; // pipe para la comunicación entre Despachador (D) y Cliente Normal (CN) para menú vegano
-int pipe_D_CN_P[2]; // pipe para la comunicación entre Despachador (D) y Cliente Normal (CN) para papas fritas
-int pipe_D_CV_H[2]; // pipe para la comunicación entre Despachador (D) y Cliente VIP (CV) para hamburguesas
-int pipe_D_CV_V[2]; // pipe para la comunicación entre Despachador (D) y Cliente VIP (CV) para menú vegano
-int pipe_D_CV_P[2]; // pipe para la comunicación entre Despachador (D) y Cliente VIP (CV) para papas fritas
+int pipe_D_C_H[2]; // pipe para la comunicación entre Despachador (D) y los clientes para hamburguesas
+int pipe_D_C_V[2]; // pipe para la comunicación entre Despachador (D) y los clientes para menú vegano
+int pipe_D_C_P[2]; // pipe para la comunicación entre Despachador (D) y los clientes para papas fritas
 
 int main() {
     pipe2(pipe_CN_D, O_NONBLOCK);
+    pipe2(pipe_CV_D, O_NONBLOCK);
+    pipe(pipe_D_H);
+    pipe(pipe_D_V);
+    pipe(pipe_D_P);
+    pipe(pipe_H_D);
+    pipe(pipe_V_D);
+    pipe(pipe_P_D);
+    pipe(pipe_D_C_H);
+    pipe(pipe_D_C_V);
+    pipe(pipe_D_C_P);
+
+    // proceso del empleado que prepara hamburguesas: lee de pipe_D_H[0] y escribe en pipe_H_D[1]
+    pid_t pid_H;
+    pid_H = fork();
+    if (pid_H == 0) {
+        while (1) {
+            read(pipe_D_H[0], &pedido, sizeof(int));
+            sleep(1); // tiempo que tarda en preparar la hamburguesa
+            printf("Hamburguesero: Pedido listo\n");
+            write(pipe_H_D[1], &pedido, sizeof(int));
+        }
+        exit(0);
+    }
+
+    // proceso del empleado que prepara menú vegano: lee de pipe_D_V[0] y escribe en pipe_V_D[1]
+    pid_t pid_V;
+    pid_V = fork();
+    if (pid_V == 0) {
+        while (1) {
+            read(pipe_D_V[0], &pedido, sizeof(int));
+            sleep(1); // tiempo que tarda en preparar el menú vegano
+            printf("Vegano: Pedido listo\n");
+            write(pipe_V_D[1], &pedido, sizeof(int));
+        }
+        exit(0);
+    }
+
+    // procesos de los dos empleados que preparan papas fritas: lee de pipe_D_P[0] y escribe en pipe_P_D[1]
+    pid_t pid_P;
+    for (int i = 0; i < 2; i++) {
+        pid_P = fork();
+        if (pid_P == 0) {
+            while (1) {
+                read(pipe_D_P[0], &pedido, sizeof(int));
+                sleep(1); // tiempo que tarda en preparar las papas fritas
+                printf("PapaFritero: Pedido listo\n");
+                write(pipe_P_D[1], &pedido, sizeof(int));
+            }
+            exit(0);
+        }
+    }
+
+    // proceso despachador:
+    // con un hilo (el principal) lee en forma no bloqueante de pipe_CN_D[0] y pipe_CV_D[0], y escribe en pipe_D_H[1], pipe_D_V[1], pipe_D_P[1] dependiendo su pedido.
+    // con otro hilo (creado) espera por los pedidos de los cocineros en pipe_H_D[0], pipe_V_D[0], pipe_P_D[0] y escribe en pipe_D_C_H[1], pipe_D_C_V[1], pipe_D_C_P[1] para entregar el pedido a los clientes que estén esperando allí.
+    pid_t pid_D;
+    pid_D = fork();
+    if (pid_D == 0) {
+
+        pthread_t hilo_atender_pedidos;
+        pthread_create(&hilo_atender_pedidos, NULL, despachar_pedidos, NULL);
+
+        while (1) {
+            // leer de los pipes de los clientes (normal y vip) en forma no bloqueante y verificar si hay pedidos para informar
+        }
+        exit(0);
+    }
+
+
+
+    // proceso cliente normal: escribe en pipe_CN_D[1] y lee de pipe_D_CN_H[0], pipe_D_CN_V[0], pipe_D_CN_P[0] dependiendo su pedido.
+    pid_t pid_CN;
+    for (int i = 0; i < NUM_CLIENTES; i++) {
+        pid_CN = fork();
+        if (pid_CN == 0) {
+            while (1) {
+                pedido = rand() % 3 + 1;
+                write(pipe_CN_D[1], &pedido, sizeof(int));
+                switch (pedido) {
+                    case 1:
+                        read(pipe_D_C_H[0], &pedido, sizeof(int));
+                        break;
+                    case 2:
+                        read(pipe_D_C_V[0], &pedido, sizeof(int));
+                        break;
+                    case 3:
+                        read(pipe_D_C_P[0], &pedido, sizeof(int));
+                        break;
+                }
+                printf("Cliente normal: Pedido listo\n");
+            }
+            exit(0);
+        }
+    }
 
     return 0;
+}
+
+void *despachar_pedidos() {
+    while (1) {
+        // leer de los pipes de los cocineros (hamburguesero, vegano, papa fritero) y escribir en los pipes de los clientes
+        // ver si puede leer de un solo pipe (y que los cocineros manden todo a ese pipe) y dependiendo el pedido, escribir en el pipe correspondiente pipe_D_C_H[1], pipe_D_C_V[1], o pipe_D_C_P[1]
+    }
 }
