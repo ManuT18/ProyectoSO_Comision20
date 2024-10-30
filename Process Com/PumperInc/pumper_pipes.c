@@ -35,9 +35,9 @@
  *      - 3: solo papas fritas
  */
 
+
 #define REPETITIONS 100
 #define NUM_CLIENTES 7
-#define _GNU_SOURCE // macro para poder usar pipe2, específico de Linux
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,36 +58,54 @@ int pipe_CV_D[2]; // pipe para la comunicación entre Cliente VIP (CV) y Despach
 int pipe_D_H[2]; // pipe para la comunicación entre Despachador (D) y Hamburguesero (H)
 int pipe_D_V[2]; // pipe para la comunicación entre Despachador (D) y el cocinero del Menú Vegano (V)
 int pipe_D_P[2]; // pipe para la comunicación entre Despachador (D) y los PapaFriteros (P)
-int pipe_H_D[2]; // pipe para la comunicación entre Hamburguesero (H) y Despachador (D)
-int pipe_V_D[2]; // pipe para la comunicación entre Vegano (V) y Despachador (D)
-int pipe_P_D[2]; // pipe para la comunicación entre PapaFritero y Despachador (D)
+int pipe_devolucion[2]; // pipe para la comunicación entre los cocineros y Despachador (D)
 int pipe_D_C_H[2]; // pipe para la comunicación entre Despachador (D) y los clientes para hamburguesas
 int pipe_D_C_V[2]; // pipe para la comunicación entre Despachador (D) y los clientes para menú vegano
 int pipe_D_C_P[2]; // pipe para la comunicación entre Despachador (D) y los clientes para papas fritas
 
 int main() {
-    pipe2(pipe_CN_D, O_NONBLOCK);
-    pipe2(pipe_CV_D, O_NONBLOCK);
+    pipe(pipe_CN_D);
+    pipe(pipe_CV_D);
     pipe(pipe_D_H);
     pipe(pipe_D_V);
     pipe(pipe_D_P);
-    pipe(pipe_H_D);
-    pipe(pipe_V_D);
-    pipe(pipe_P_D);
     pipe(pipe_D_C_H);
     pipe(pipe_D_C_V);
     pipe(pipe_D_C_P);
+    pipe(pipe_devolucion);
+
+    fcntl(pipe_CN_D[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipe_CV_D[0], F_SETFL, O_NONBLOCK);
 
     // proceso del empleado que prepara hamburguesas: lee de pipe_D_H[0] y escribe en pipe_H_D[1]
     pid_t pid_H;
     pid_H = fork();
     if (pid_H == 0) {
-        while (1) {
+        close(pipe_CN_D[0]);
+        close(pipe_CN_D[1]);
+        close(pipe_CV_D[0]);
+        close(pipe_CV_D[1]);
+        close(pipe_D_H[1]);
+        close(pipe_D_V[0]);
+        close(pipe_D_V[1]);
+        close(pipe_D_P[0]);
+        close(pipe_D_P[1]);
+        close(pipe_D_C_H[0]);
+        close(pipe_D_C_H[1]);
+        close(pipe_D_C_V[0]);
+        close(pipe_D_C_V[1]);
+        close(pipe_D_C_P[0]);
+        close(pipe_D_C_P[1]);
+        close(pipe_devolucion[0]);
+
+        for (int i = 0; i < REPETITIONS; i++) {
             read(pipe_D_H[0], &pedido, sizeof(int));
             sleep(1); // tiempo que tarda en preparar la hamburguesa
-            printf("Hamburguesero: Pedido listo\n");
-            write(pipe_H_D[1], &pedido, sizeof(int));
+            printf("Hamburguesa: Pedido listo\n");
+            write(pipe_devolucion[1], &pedido, sizeof(int));
         }
+        close(pipe_D_H[0]);
+        close(pipe_devolucion[1]);
         exit(0);
     }
 
@@ -95,12 +113,31 @@ int main() {
     pid_t pid_V;
     pid_V = fork();
     if (pid_V == 0) {
-        while (1) {
+        close(pipe_CN_D[0]);
+        close(pipe_CN_D[1]);
+        close(pipe_CV_D[0]);
+        close(pipe_CV_D[1]);
+        close(pipe_D_H[0]);
+        close(pipe_D_H[1]);
+        close(pipe_D_V[1]);
+        close(pipe_D_P[0]);
+        close(pipe_D_P[1]);
+        close(pipe_D_C_H[0]);
+        close(pipe_D_C_H[1]);
+        close(pipe_D_C_V[0]);
+        close(pipe_D_C_V[1]);
+        close(pipe_D_C_P[0]);
+        close(pipe_D_C_P[1]);
+        close(pipe_devolucion[0]);
+
+        for (int i = 0; i < REPETITIONS; i++) {
             read(pipe_D_V[0], &pedido, sizeof(int));
             sleep(1); // tiempo que tarda en preparar el menú vegano
-            printf("Vegano: Pedido listo\n");
-            write(pipe_V_D[1], &pedido, sizeof(int));
+            printf("Menu Vegano: Pedido listo\n");
+            write(pipe_devolucion[1], &pedido, sizeof(int));
         }
+        close(pipe_D_V[0]);
+        close(pipe_devolucion[1]);
         exit(0);
     }
 
@@ -109,12 +146,31 @@ int main() {
     for (int i = 0; i < 2; i++) {
         pid_P = fork();
         if (pid_P == 0) {
-            while (1) {
+            close(pipe_CN_D[0]);
+            close(pipe_CN_D[1]);
+            close(pipe_CV_D[0]);
+            close(pipe_CV_D[1]);
+            close(pipe_D_H[0]);
+            close(pipe_D_H[1]);
+            close(pipe_D_V[0]);
+            close(pipe_D_V[1]);
+            close(pipe_D_P[1]);
+            close(pipe_D_C_H[0]);
+            close(pipe_D_C_H[1]);
+            close(pipe_D_C_V[0]);
+            close(pipe_D_C_V[1]);
+            close(pipe_D_C_P[0]);
+            close(pipe_D_C_P[1]);
+            close(pipe_devolucion[0]);
+
+            for (int i = 0; i < REPETITIONS; i++) {
                 read(pipe_D_P[0], &pedido, sizeof(int));
                 sleep(1); // tiempo que tarda en preparar las papas fritas
-                printf("PapaFritero: Pedido listo\n");
-                write(pipe_P_D[1], &pedido, sizeof(int));
+                printf("Papas Fritas: Pedido listo\n");
+                write(pipe_devolucion[1], &pedido, sizeof(int));
             }
+            close(pipe_D_P[0]);
+            close(pipe_devolucion[1]);
             exit(0);
         }
     }
@@ -125,49 +181,217 @@ int main() {
     pid_t pid_D;
     pid_D = fork();
     if (pid_D == 0) {
+        close(pipe_D_H[0]);
+        close(pipe_D_V[0]);
+        close(pipe_D_P[0]);
+        close(pipe_D_C_H[0]);
+        close(pipe_D_C_V[0]);
+        close(pipe_D_C_P[0]);
 
-        pthread_t hilo_atender_pedidos;
-        pthread_create(&hilo_atender_pedidos, NULL, despachar_pedidos, NULL);
+        pthread_t hilo_despachar_pedidos;
+        pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
         while (1) {
-            // leer de los pipes de los clientes (normal y vip) en forma no bloqueante y verificar si hay pedidos para informar
+            while (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
+                sleep(1);
+                // leer de los pipes de los clientes (normal y vip) en forma no bloqueante y verificar si hay pedidos para informar
+                switch (pedido) {
+                    case 1:
+                        printf("Despachador: Pedido de hamburguesa\n");
+                        write(pipe_D_H[1], &pedido, sizeof(int));
+                        break;
+                    case 2:
+                        printf("Despachador: Pedido de menú vegano\n");
+                        write(pipe_D_V[1], &pedido, sizeof(int));
+                        break;
+                    case 3:
+                        printf("Despachador: Pedido de papas fritas\n");
+                        write(pipe_D_P[1], &pedido, sizeof(int));
+                        break;
+                }
+            }
+
+            if (read(pipe_CN_D[0], &pedido, sizeof(int)) > 0) {
+                sleep(1);
+                switch (pedido) {
+                    case 1:
+                        printf("Despachador: Pedido de hamburguesa\n");
+                        write(pipe_D_H[1], &pedido, sizeof(int));
+                        break;
+                    case 2:
+                        printf("Despachador: Pedido de menú vegano\n");
+                        write(pipe_D_V[1], &pedido, sizeof(int));
+                        break;
+                    case 3:
+                        printf("Despachador: Pedido de papas fritas\n");
+                        write(pipe_D_P[1], &pedido, sizeof(int));
+                        break;
+                }
+            }
         }
+
+        pthread_join(hilo_despachar_pedidos, NULL);
+        close(pipe_CN_D[0]);
+        close(pipe_CN_D[1]);
+        close(pipe_CV_D[0]);
+        close(pipe_CV_D[1]);
+        close(pipe_D_H[1]);
+        close(pipe_D_V[1]);
+        close(pipe_D_P[1]);
+        close(pipe_D_C_H[1]);
+        close(pipe_D_C_V[1]);
+        close(pipe_D_C_P[1]);
+        close(pipe_devolucion[0]);
+        close(pipe_devolucion[1]);
         exit(0);
     }
-
-
 
     // proceso cliente normal: escribe en pipe_CN_D[1] y lee de pipe_D_CN_H[0], pipe_D_CN_V[0], pipe_D_CN_P[0] dependiendo su pedido.
     pid_t pid_CN;
     for (int i = 0; i < NUM_CLIENTES; i++) {
         pid_CN = fork();
         if (pid_CN == 0) {
-            while (1) {
+            close(pipe_CN_D[0]);
+            close(pipe_CV_D[0]);
+            close(pipe_CV_D[1]);
+            close(pipe_D_H[0]);
+            close(pipe_D_H[1]);
+            close(pipe_D_V[0]);
+            close(pipe_D_V[1]);
+            close(pipe_D_P[0]);
+            close(pipe_D_P[1]);
+            close(pipe_D_C_H[1]);
+            close(pipe_D_C_V[1]);
+            close(pipe_D_C_P[1]);
+            close(pipe_devolucion[0]);
+            close(pipe_devolucion[1]);
+
+            for (int i = 0; i < 4; i++) {
+                sleep(1);
+                srand(time(NULL)/(i+1) + getpid()*i);
                 pedido = rand() % 3 + 1;
                 write(pipe_CN_D[1], &pedido, sizeof(int));
                 switch (pedido) {
                     case 1:
+                        printf("Cliente Normal: Pedido de hamburguesa\n");
                         read(pipe_D_C_H[0], &pedido, sizeof(int));
                         break;
                     case 2:
+                        printf("Cliente Normal: Pedido de menú vegano\n");
                         read(pipe_D_C_V[0], &pedido, sizeof(int));
                         break;
                     case 3:
+                        printf("Cliente Normal: Pedido de papas fritas\n");
                         read(pipe_D_C_P[0], &pedido, sizeof(int));
                         break;
                 }
-                printf("Cliente normal: Pedido listo\n");
             }
+            close(pipe_CN_D[1]);
+            close(pipe_D_C_H[0]);
+            close(pipe_D_C_V[0]);
+            close(pipe_D_C_P[0]);
             exit(0);
         }
+    }
+
+    // proceso cliente VIP: escribe en pipe_CV_D[1] y lee de pipe_D_CV_H[0], pipe_D_CV_V[0], pipe_D_CV_P[0] dependiendo su pedido.
+    pid_t pid_CV;
+    for (int i = 0; i < NUM_CLIENTES; i++) {
+        pid_CV = fork();
+        if (pid_CV == 0) {
+            close(pipe_CN_D[0]);
+            close(pipe_CN_D[1]);
+            close(pipe_CV_D[0]);
+            close(pipe_D_H[0]);
+            close(pipe_D_H[1]);
+            close(pipe_D_V[0]);
+            close(pipe_D_V[1]);
+            close(pipe_D_P[0]);
+            close(pipe_D_P[1]);
+            close(pipe_D_C_H[1]);
+            close(pipe_D_C_V[1]);
+            close(pipe_D_C_P[1]);
+            close(pipe_devolucion[0]);
+            close(pipe_devolucion[1]);
+
+            for (int i = 0; i < 4; i++) {
+                sleep(1);
+                srand(time(NULL)*i + getpid()/(i+1));
+                pedido = rand() % 3 + 1;
+                write(pipe_CV_D[1], &pedido, sizeof(int));
+                switch (pedido) {
+                    case 1:
+                        printf("Cliente VIP: Pedido de hamburguesa\n");
+                        read(pipe_D_C_H[0], &pedido, sizeof(int));
+                        break;
+                    case 2:
+                        printf("Cliente VIP: Pedido de menú vegano\n");
+                        read(pipe_D_C_V[0], &pedido, sizeof(int));
+                        break;
+                    case 3:
+                        printf("Cliente VIP: Pedido de papas fritas\n");
+                        read(pipe_D_C_P[0], &pedido, sizeof(int));
+                        break;
+                }
+            }
+            close(pipe_CV_D[1]);
+            close(pipe_D_C_H[0]);
+            close(pipe_D_C_V[0]);
+            close(pipe_D_C_P[0]);
+            exit(0);
+        }
+    }
+
+    close(pipe_CN_D[0]);
+    close(pipe_CN_D[1]);
+    close(pipe_CV_D[0]);
+    close(pipe_CV_D[1]);
+    close(pipe_D_H[0]);
+    close(pipe_D_H[1]);
+    close(pipe_D_V[0]);
+    close(pipe_D_V[1]);
+    close(pipe_D_P[0]);
+    close(pipe_D_P[1]);
+    close(pipe_D_C_H[0]);
+    close(pipe_D_C_H[1]);
+    close(pipe_D_C_V[0]);
+    close(pipe_D_C_V[1]);
+    close(pipe_D_C_P[0]);
+    close(pipe_D_C_P[1]);
+    close(pipe_devolucion[0]);
+    close(pipe_devolucion[1]);
+
+    waitpid(pid_H, NULL, 0);
+    waitpid(pid_V, NULL, 0);
+    for (int i = 0; i < 2; i++) {
+        wait(NULL);
+    }
+    waitpid(pid_D, NULL, 0);
+    for (int i = 0; i < NUM_CLIENTES; i++) {
+        wait(NULL);
+        wait(NULL);
     }
 
     return 0;
 }
 
 void *despachar_pedidos() {
-    while (1) {
-        // leer de los pipes de los cocineros (hamburguesero, vegano, papa fritero) y escribir en los pipes de los clientes
-        // ver si puede leer de un solo pipe (y que los cocineros manden todo a ese pipe) y dependiendo el pedido, escribir en el pipe correspondiente pipe_D_C_H[1], pipe_D_C_V[1], o pipe_D_C_P[1]
+    int pedido = 0;
+    for (int i = 0; i < REPETITIONS; i++) {
+        // leer del pipe de los cocineros y escribir en los pipes de los clientes
+        read(pipe_devolucion[0], &pedido, sizeof(int));
+        switch (pedido) {
+            case 1:
+                write(pipe_D_C_H[1], &pedido, sizeof(int));
+                break;
+            case 2:
+                write(pipe_D_C_V[1], &pedido, sizeof(int));
+                break;
+            case 3:
+                write(pipe_D_C_P[1], &pedido, sizeof(int));
+                break;
+        }
     }
+
+    return NULL;
 }
