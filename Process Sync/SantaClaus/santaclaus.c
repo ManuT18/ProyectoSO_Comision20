@@ -16,23 +16,21 @@ sem_t sem_santa_volvio; // para indicar que Santa volvió de entregar los regalo
 sem_t sem_puerta_elfos; // para que los elfos nuevos esperen atrás de una puerta a que Santa termine de ayudar a los elfos viejos (simula una puerta que se cierra cuando hay 3 elfos adentro). Es binario
 sem_t sem_renos; // indica la cantidad de renos
 sem_t sem_elfos; // indica la cantidad de elfos
-pthread_mutex_t mutAyuda; // para que Santa pueda atender a los elfos sin que los renos lo interrumpan
+
 pthread_t threads[3];
 
 void *thread_santa() {
     for (int i = 0; i < REPETITIONS; i++) {
-        //printf("Iteracion %i\n", i + 1);
+        printf("Iteracion %i\n", i + 1);
         sem_wait(&sem_santa);
         printf("\nSanta Claus: Despierta\n");
-        // sleep(2);
+        sleep(2);
 
         // si están los 9 renos esperando...
         if (sem_trywait((&sem_renos)) == -1) {
-            pthread_mutex_lock(&mutAyuda);
-
             printf("\nSanta Claus: Preparando trineo");
             fflush(stdout);
-            // sleep(1);
+            sleep(1);
 
             printf("\nSanta Claus: Trineo listo");
             printf("\nSanta Claus: Entregando regalos\n\nSanta volverá en un momento\n");
@@ -40,7 +38,7 @@ void *thread_santa() {
             for (int i = 5; i > 0; i--) {
                 printf(". ");
                 fflush(stdout);
-                // sleep(1);
+                sleep(1);
             }
             
             printf("\nSanta Claus: Volvió\n\n");
@@ -57,8 +55,6 @@ void *thread_santa() {
                 sem_post(&sem_renos);
             }
 
-            pthread_mutex_unlock(&mutAyuda);
-
             sem_post(&sem_santa_volvio);
         } else {
             sem_post(&sem_renos);
@@ -67,18 +63,16 @@ void *thread_santa() {
         // si hay 3 elfos esperando...
         if (sem_trywait((&sem_elfos)) == -1) {
             
-            pthread_mutex_lock(&mutAyuda);
             printf("\nSanta Claus: Ayudando a los elfos\n");
-            // sleep(1);
+            sleep(1);
 
             for (int i = 0; i < 3; i++) {
                 sem_post(&sem_elfos);
                 printf("\nSanta Claus: Ayudando al %i° elfo \n", i + 1);
-                // sleep(1);
+                sleep(1);
             }
 
             printf("\nSanta Claus: Terminé de ayudar a los elfos\n");
-            pthread_mutex_unlock(&mutAyuda);
 
             sem_post(&sem_puerta_elfos);
         } else {
@@ -99,13 +93,13 @@ void *thread_santa() {
 void *thread_reno() {
     for (int i = 0; i < REPETITIONS; i++) {
         sem_wait(&sem_santa_volvio);
-        // sleep(5);
+        sleep(5);
 
         for (int i = 0; i < 9; i++) {
             sem_wait(&sem_renos);
             printf("\nLlega reno %i\n", i + 1);
             fflush(stdout);
-            // sleep(2);
+            sleep(2);
         }
 
         sem_post(&sem_santa);
@@ -122,7 +116,7 @@ void *thread_elfo() {
             sem_wait(&sem_elfos);
 
             printf("\nElfo %i tiene problema\n", j + 1);
-            // sleep(3);
+            sleep(3);
         }
 
         printf("\nYa somos 3 elfos, vamos a acudir a Santa\n");
@@ -141,7 +135,6 @@ int main(int argc, char const *argv[]) {
     sem_init(&sem_renos, 0, 9);
     sem_init(&sem_elfos, 0, 3);
     sem_init(&sem_puerta_elfos, 0, 1);
-    pthread_mutex_init(&mutAyuda, NULL);
 
     pthread_create(&threads[0], NULL, thread_reno, NULL);
     pthread_create(&threads[1], NULL, thread_elfo, NULL);
@@ -156,7 +149,6 @@ int main(int argc, char const *argv[]) {
     sem_destroy(&sem_santa);
     sem_destroy(&sem_santa_volvio);
     sem_destroy(&sem_puerta_elfos);
-    pthread_mutex_destroy(&mutAyuda);
 
     return 0;
 }
