@@ -37,7 +37,8 @@
 
 
 #define REPETITIONS 100
-#define NUM_CLIENTES 7
+#define NUM_CLIENTES_COMUNES 7
+#define NUM_CLIENTES_VIP 4
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -248,7 +249,7 @@ int main() {
 
     // proceso cliente normal: escribe en pipe_CN_D[1] y lee de pipe_D_CN_H[0], pipe_D_CN_V[0], pipe_D_CN_P[0] dependiendo su pedido.
     pid_t pid_CN;
-    for (int i = 0; i < NUM_CLIENTES; i++) {
+    for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         pid_CN = fork();
         if (pid_CN == 0) {
             close(pipe_CN_D[0]);
@@ -296,7 +297,7 @@ int main() {
 
     // proceso cliente VIP: escribe en pipe_CV_D[1] y lee de pipe_D_CV_H[0], pipe_D_CV_V[0], pipe_D_CV_P[0] dependiendo su pedido.
     pid_t pid_CV;
-    for (int i = 0; i < NUM_CLIENTES; i++) {
+    for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         pid_CV = fork();
         if (pid_CV == 0) {
             close(pipe_CN_D[0]);
@@ -367,8 +368,10 @@ int main() {
         wait(NULL);
     }
     waitpid(pid_D, NULL, 0);
-    for (int i = 0; i < NUM_CLIENTES; i++) {
+    for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         wait(NULL);
+    }
+    for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         wait(NULL);
     }
 
