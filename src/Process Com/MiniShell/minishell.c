@@ -298,6 +298,11 @@ int main() {
             active = 0;
         }
 
+        // si solo apreta enter, no hacer nada
+        if (comando[0] == '\n') {
+            continue;
+        }
+
         comando[strcspn(comando, "\n")] = '\0'; // para que no tome el enter
 
         args[0] = strtok(comando, " ");
