@@ -197,7 +197,7 @@ void listar_directorio(char **args) {
 
 void mostrar_contenido_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"cat\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"show\"\n");
         return;
     }
 
