@@ -1,4 +1,5 @@
-# Proyecto de Sincronización y Comunicación de Procesos - Comisión 20 de la cátedra Sistemas Operativos - UNS
+# Proyecto de Comunicación y Sincronización de Procesos
+## Comisión 20 de la cátedra Sistemas Operativos - UNS
 
 Este proyecto incluye varios ejercicios relacionados con la sincronización y comunicación entre procesos. Los ejercicios están escritos en **C** y abordan temas como la gestión de procesos, la sincronización utilizando semáforos, y la comunicación entre procesos mediante pipes, colas de mensajes, entre otros.
 
