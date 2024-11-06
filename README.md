@@ -1,4 +1,4 @@
-# Proyecto de Sincronización y Comunicación de Procesos
+# Proyecto de Sincronización y Comunicación de Procesos - Comisión 20 de la cátedra Sistemas Operativos - UNS
 
 Este proyecto incluye varios ejercicios relacionados con la sincronización y comunicación entre procesos. Los ejercicios están escritos en **C** y abordan temas como la gestión de procesos, la sincronización utilizando semáforos, y la comunicación entre procesos mediante pipes, colas de mensajes, entre otros.
 
@@ -14,7 +14,7 @@ El proyecto se organiza en dos directorios principales:
     - **`Motos/`**: Ejemplo de sincronización de varios procesos.
     - **`SantaClaus/`**: Simulación de tareas sincronizadas.
   
-- **`bin/`**: Contiene los archivos binarios generados después de la compilación, con el mismo formato de carpetas.
+- **`bin/`**: Contiene los archivos binarios generados después de la compilación, con el mismo formato de carpetas que **`src`**.
 
 ## Requisitos
 
@@ -42,7 +42,7 @@ El proyecto se organiza en dos directorios principales:
 
 ### Ejecución de los Programas
 
-Para ejecutar los programas de manera individual o en secuencia, podés usar las siguientes instrucciones:
+Para ejecutar los programas de manera individual, podés usar las siguientes instrucciones:
 
 - **Ejecutar un programa específico:**
 
@@ -56,7 +56,7 @@ Para ejecutar los programas de manera individual o en secuencia, podés usar las
 
 ### Limpiar los Archivos Generados
 
-Para eliminar los binarios generados y limpiar el proyecto, usá el siguiente comando:
+Para eliminar los binarios generados, usá el siguiente comando:
 
 ```bash
 make clean
@@ -72,15 +72,15 @@ Este programa simula una shell básica que interactúa con el sistema operativo,
 
 ### `PumperInc`
 
-Implementación de un sistema de comunicación entre procesos utilizando pipes y colas.
+Implementación de un sistema de comunicación entre procesos utilizando pipes y colas de mensajes.
 
 ### `Motos`
 
-Ejemplo de sincronización de procesos utilizando semáforos. Simula la sincronización entre varios procesos que acceden a recursos compartidos.
+Ejemplo de sincronización de procesos utilizando semáforos. El caso de estudio es la producción de un taller de motos.
 
 ### `SantaClaus`
 
-Ejemplo de sincronización de procesos para gestionar tareas sincronizadas en un entorno controlado.
+Ejemplo de sincronización de procesos utilizando semáforos. El caso de estudio es Santa Claus en su tienda del Polo Norte, repartiendo regalos y atendiendo elfos.
 
 ## Contribuciones
 
