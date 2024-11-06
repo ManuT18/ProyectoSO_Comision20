@@ -158,9 +158,9 @@ void crear_archivo(char **args) {
 }
 
 void listar_directorio(char **args) {
+    // si no se pasa ningun argumento, listar el directorio actual
     if (args[1] == NULL) {
-        // listar el directorio actual
-        strcpy(args[1], ".");
+        args[1] = ".";
     }
 
     char dir[256];
