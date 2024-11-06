@@ -88,4 +88,4 @@ Las contribuciones son bienvenidas. Si tienes sugerencias o mejoras para el proy
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT - consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la Licencia MIT - consulta el archivo [LICENSE.md](LICENSE) para más detalles.
