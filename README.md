@@ -25,14 +25,14 @@ El proyecto se organiza en dos directorios principales:
 
 ### Compilación de los Archivos Fuente
 
-1. Clona el repositorio en tu máquina local:
+1. Cloná el repositorio en tu máquina local:
 
    ```bash
    git clone https://github.com/tu_usuario/tu_repositorio.git
    cd tu_repositorio
    ```
 
-2. Usa `make` para compilar todos los archivos fuente:
+2. Usá `make` para compilar todos los archivos fuente:
 
    ```bash
    make all
@@ -42,7 +42,7 @@ El proyecto se organiza en dos directorios principales:
 
 ### Ejecución de los Programas
 
-Para ejecutar los programas de manera individual o en secuencia, puedes usar las siguientes instrucciones:
+Para ejecutar los programas de manera individual o en secuencia, podés usar las siguientes instrucciones:
 
 - **Ejecutar un programa específico:**
 
@@ -56,7 +56,7 @@ Para ejecutar los programas de manera individual o en secuencia, puedes usar las
 
 ### Limpiar los Archivos Generados
 
-Para eliminar los binarios generados y limpiar el proyecto, usa el siguiente comando:
+Para eliminar los binarios generados y limpiar el proyecto, usá el siguiente comando:
 
 ```bash
 make clean
@@ -84,8 +84,8 @@ Ejemplo de sincronización de procesos para gestionar tareas sincronizadas en un
 
 ## Contribuciones
 
-Las contribuciones son bienvenidas. Si tienes sugerencias o mejoras para el proyecto, por favor, abre un **issue** o realiza un **pull request**.
+Las contribuciones son bienvenidas. Si tenés sugerencias o mejoras para el proyecto, por favor, abrí un **issue** o realizá un **pull request**.
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT - consulta el archivo [LICENSE](LICENSE.md) para más detalles.
+Este proyecto está bajo la Licencia MIT - consultá el archivo [LICENSE](LICENSE.md) para más detalles.
