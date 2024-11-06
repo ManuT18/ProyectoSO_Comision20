@@ -216,11 +216,11 @@ int main() {
 
     // forzar la interrupción del programa una vez que los clientes se hayan marchado, matando a todos los hijos y despues al padre.
     // el único propósito de esto es para que el programa no se quede bloqueado por culpa de los bucles infinitos de los empleados, y de esa forma, traben la ejecución del makefile.
-    kill(pid_H, SIGKILL);
-    kill(pid_V, SIGKILL);
-    kill(pid_P, SIGKILL);
-    kill(pid_P2, SIGKILL);
-    kill(pid_D, SIGKILL);
+    kill(pid_H, SIGTERM);
+    kill(pid_V, SIGTERM);
+    kill(pid_P, SIGTERM);
+    kill(pid_P2, SIGTERM);
+    kill(pid_D, SIGTERM);
 
     waitpid(pid_H, NULL, 0);
     waitpid(pid_V, NULL, 0);
