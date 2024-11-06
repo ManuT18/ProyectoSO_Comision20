@@ -145,7 +145,7 @@ void eliminar_directorio(char **args) {
 // Función para crear un archivo con permisos 0666 (rw-rw-rw-)
 void crear_archivo(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"touch\"\n");
+        fprintf(stderr, "minishell: Se espera un argumento para \"mkfile\"\n");
         return;
     }
 
@@ -185,8 +185,16 @@ void listar_directorio(char **args) {
 
     FTSENT *node; // la estructura FTSENT contiene información sobre un nodo del sistema de archivos
     while ((node = fts_read(ftsp)) != NULL) { // leer cada nodo del sistema de archivos
-        if (node->fts_info & FTS_F) { // verificar si el nodo es un archivo (regular file)
-            printf("%s\n", node->fts_name); // imprimir el nombre del archivo
+        // listar los directorios y archivos recursivamente
+        switch (node->fts_info) {
+            case FTS_D:
+                printf("%s/\n", node->fts_name);
+                break;
+            case FTS_F:
+                printf("%s\n", node->fts_name);
+                break;
+            default:
+                break;
         }
     }
 
