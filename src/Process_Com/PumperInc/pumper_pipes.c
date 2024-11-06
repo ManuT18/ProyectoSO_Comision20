@@ -36,8 +36,8 @@
  */
 
 #define REPETITIONS 100
-#define NUM_CLIENTES_COMUNES 7
-#define NUM_CLIENTES_VIP 4
+#define NUM_CLIENTES_COMUNES 10
+#define NUM_CLIENTES_VIP 2
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,9 +101,8 @@ int main() {
         close(pipe_D_C_P[1]);
         close(pipe_devolucion[0]);
 
-        for (int i = 0; i < REPETITIONS; i++) {
+        while (1) {
             read(pipe_D_H[0], &pedido, sizeof(int));
-            sleep(1); // tiempo que tarda en preparar la hamburguesa
             printf("Hamburguesa: Pedido listo\n");
             write(pipe_devolucion[1], &pedido, sizeof(int));
         }
@@ -135,9 +134,8 @@ int main() {
         close(pipe_D_C_P[1]);
         close(pipe_devolucion[0]);
 
-        for (int i = 0; i < REPETITIONS; i++) {
+        while (1) {
             read(pipe_D_V[0], &pedido, sizeof(int));
-            sleep(1); // tiempo que tarda en preparar el menú vegano
             printf("Menu Vegano: Pedido listo\n");
             write(pipe_devolucion[1], &pedido, sizeof(int));
         }
@@ -150,8 +148,10 @@ int main() {
 
     // procesos de los dos empleados que preparan papas fritas: lee de pipe_D_P[0] y escribe en pipe_P_D[1]
     pid_t pid_P;
+    pid_t pid_P2;
     for (int i = 0; i < 2; i++) {
         pid_P = fork();
+        i == 2 ? pid_P2 = pid_P : 0; // obtener el pid del segundo empleado que prepara papas fritas
         if (pid_P == 0) {
             close(pipe_CN_D[0]);
             close(pipe_CN_D[1]);
@@ -170,9 +170,8 @@ int main() {
             close(pipe_D_C_P[1]);
             close(pipe_devolucion[0]);
 
-            for (int i = 0; i < REPETITIONS; i++) {
+            while (1) {
                 read(pipe_D_P[0], &pedido, sizeof(int));
-                sleep(1); // tiempo que tarda en preparar las papas fritas
                 printf("Papas Fritas: Pedido listo\n");
                 write(pipe_devolucion[1], &pedido, sizeof(int));
             }
@@ -202,12 +201,10 @@ int main() {
 
         while (1) {
             while (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
-                sleep(1);
                 atender_pedido(pedido);
             }
 
             if (read(pipe_CN_D[0], &pedido, sizeof(int)) > 0) {
-                sleep(1);
                 atender_pedido(pedido);
             }
         }
@@ -249,16 +246,14 @@ int main() {
             close(pipe_devolucion[0]);
             close(pipe_devolucion[1]);
 
-            for (int i = 0; i < 4; i++) {
-                sleep(1);
-                srand(time(NULL)/(i+1) + getpid()*i);
-                pedido = rand() % 3 + 1;
-                // realiza el pedido al despachador
-                write(pipe_CN_D[1], &pedido, sizeof(int));
-                // pasa a una cola de espera por su pedido especifico
-                esperar_pedido(pedido);
-                printf("Cliente Normal: Marchándome contento\n");
-            }
+            srand(time(NULL)/(i+1) + getpid()*i);
+            pedido = rand() % 3 + 1;
+            // realiza el pedido al despachador
+            printf("Cliente Normal: Pedido %d\n", pedido);
+            write(pipe_CN_D[1], &pedido, sizeof(int));
+            // pasa a una cola de espera por su pedido especifico
+            esperar_pedido(pedido);
+            printf("Cliente Normal: Marchándome contento\n");
 
             close(pipe_CN_D[1]);
             close(pipe_D_C_H[0]);
@@ -289,16 +284,14 @@ int main() {
             close(pipe_devolucion[0]);
             close(pipe_devolucion[1]);
 
-            for (int i = 0; i < 4; i++) {
-                sleep(1);
-                srand(time(NULL)*i + getpid()/(i+1));
-                pedido = rand() % 3 + 1;
-                // realiza el pedido al despachador
-                write(pipe_CV_D[1], &pedido, sizeof(int));
-                // se va a una cola de espera por su pedido especifico
-                esperar_pedido(pedido);
-                printf("Cliente VIP: Marchándome contento\n");
-            }
+            srand(time(NULL)*i + getpid()/(i+1));
+            pedido = rand() % 3 + 1;
+            // realiza el pedido al despachador
+            printf("Cliente VIP: Pedido %d\n", pedido);
+            write(pipe_CV_D[1], &pedido, sizeof(int));
+            // se va a una cola de espera por su pedido especifico
+            esperar_pedido(pedido);
+            printf("Cliente VIP: Marchándome contento\n");
 
             close(pipe_CV_D[1]);
             close(pipe_D_C_H[0]);
@@ -328,13 +321,6 @@ int main() {
     close(pipe_devolucion[0]);
     close(pipe_devolucion[1]);
 
-    waitpid(pid_H, NULL, 0);
-    waitpid(pid_V, NULL, 0);
-    // esperar a que terminen los dos empleados que preparan papas fritas
-    for (int i = 0; i < 2; i++) {
-        wait(NULL);
-    }
-    waitpid(pid_D, NULL, 0);
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         wait(NULL);
     }
@@ -342,12 +328,26 @@ int main() {
         wait(NULL);
     }
 
+    // forzar la interrupción del programa una vez que los clientes se hayan marchado, matando a todos los hijos y despues al padre.
+    // el único propósito de esto es para que el programa no se quede bloqueado por culpa de los bucles infinitos de los empleados, y de esa forma, traben la ejecución del makefile.
+    kill(pid_H, SIGKILL);
+    kill(pid_V, SIGKILL);
+    kill(pid_P, SIGKILL);
+    kill(pid_P2, SIGKILL);
+    kill(pid_D, SIGKILL);
+
+    waitpid(pid_H, NULL, 0);
+    waitpid(pid_V, NULL, 0);
+    waitpid(pid_P, NULL, 0);
+    waitpid(pid_P2, NULL, 0);
+    waitpid(pid_D, NULL, 0);
+
     return 0;
 }
 
 void *despachar_pedidos() {
     int pedido = 0;
-    for (int i = 0; i < REPETITIONS; i++) {
+    while (1) {
         // leer del pipe de los cocineros y escribir en los pipes de los clientes
         read(pipe_devolucion[0], &pedido, sizeof(int));
         switch (pedido) {

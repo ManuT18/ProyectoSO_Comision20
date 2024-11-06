@@ -20,6 +20,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,6 +30,7 @@
 #include <sys/msg.h>
 #include <sys/ipc.h>
 #include <pthread.h>
+#include <signal.h>
 
 struct msg_buffer {
     long type;
@@ -46,9 +48,8 @@ struct msg_buffer {
 // el tipo 9 es para que el despachador le indique al cliente que su pedido de papas fritas está listo
 
 #define KEY 1234
-#define ITERATIONS 100
-#define NUM_CLIENTES_COMUNES 5
-#define NUM_CLIENTES_VIP 4
+#define NUM_CLIENTES_COMUNES 8
+#define NUM_CLIENTES_VIP 9
 #define MSG_SIZE sizeof(struct msg_buffer) - sizeof(long)
 
 void* despachar_pedidos();
@@ -61,11 +62,11 @@ int main() {
     pid_t pid_H;
     pid_H = fork();
     if (pid_H == 0) {
-        for (int i = 0; i < ITERATIONS; i++) {
+        while (1) {
             msgrcv(queue, &msg, MSG_SIZE, 3, 0);
-            sleep(1); // tiempo que tarda en preparar la hamburguesa
             msg.type = 6;
             msg.pedido = 1;
+            printf("Hamburguesa: Pedido listo\n");
             msgsnd(queue, &msg, MSG_SIZE, 0);
         }
         exit(0);
@@ -76,11 +77,11 @@ int main() {
     pid_V = fork();
     if (pid_V == 0) {
         int queue = msgget(KEY, 0666);
-        for (int i = 0; i < ITERATIONS; i++) {
+        while (1) {
             msgrcv(queue, &msg, MSG_SIZE, 4, 0);
-            sleep(1); // tiempo que tarda en preparar el menú vegano
             msg.type = 6;
             msg.pedido = 2;
+            printf("Menú Vegano: Pedido listo\n");
             msgsnd(queue, &msg, MSG_SIZE, 0);
         }
         exit(0);
@@ -88,15 +89,17 @@ int main() {
 
     // proceso de los dos empleados que preparan papas fritas: leen de la cola mensajes de tipo 5 y escriben en la cola mensaje de tipo 6 con el pedido "3"
     pid_t pid_P;
+    pid_t pid_P2;
     for (int i = 0; i < 2; i++) {
         pid_P = fork();
+        i == 2 ? pid_P2 = pid_P : 0;
         if (pid_P == 0) {
             int queue = msgget(KEY, 0666);
-            for (int i = 0; i < ITERATIONS; i++) {
+            while (1) {
                 msgrcv(queue, &msg, MSG_SIZE, 5, 0);
-                sleep(1); // tiempo que tarda en preparar las papas fritas
                 msg.type = 6;
                 msg.pedido = 3;
+                printf("Papas Fritas: Pedido listo\n");
                 msgsnd(queue, &msg, MSG_SIZE, 0);
             }
             exit(0);
@@ -155,27 +158,24 @@ int main() {
     for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         pid_CV = fork();
         if (pid_CV == 0) {
-            sleep(3);
             int queue = msgget(KEY, 0666);
-            for (int i = 0; i < ITERATIONS; i++) {
-                sleep(1);
-                srand(time(NULL)*i + getpid()/(i+1));
-                msg.pedido = rand() % 3 + 1;
-                msg.type = 1;
-                printf("Cliente VIP: Pedido %d\n", msg.pedido);
-                msgsnd(queue, &msg, MSG_SIZE, 0);
-                switch (msg.pedido) {
-                    case 1:
-                        msgrcv(queue, &msg, MSG_SIZE, 7, 0);
-                        break;
-                    case 2:
-                        msgrcv(queue, &msg, MSG_SIZE, 8, 0);
-                        break;
-                    case 3:
-                        msgrcv(queue, &msg, MSG_SIZE, 9, 0);
-                        break;
-                }
+            srand(time(NULL)*i + getpid()/(i+1));
+            msg.pedido = rand() % 3 + 1;
+            msg.type = 1;
+            printf("Cliente VIP: Pedido %d\n", msg.pedido);
+            msgsnd(queue, &msg, MSG_SIZE, 0);
+            switch (msg.pedido) {
+                case 1:
+                    msgrcv(queue, &msg, MSG_SIZE, 7, 0);
+                    break;
+                case 2:
+                    msgrcv(queue, &msg, MSG_SIZE, 8, 0);
+                    break;
+                case 3:
+                    msgrcv(queue, &msg, MSG_SIZE, 9, 0);
+                    break;
             }
+            printf("Cliente VIP: Marchándome contento\n");
             exit(0);
         }
     }
@@ -186,41 +186,47 @@ int main() {
         pid_CC = fork();
         if (pid_CC == 0) {
             int queue = msgget(KEY, 0666);
-            for (int i = 0; i < ITERATIONS; i++) {
-                sleep(1);
-                srand(time(NULL)/(i+1) + getpid()*i);
-                msg.pedido = rand() % 3 + 1;
-                msg.type = 2;
-                printf("Cliente común: Pedido %d\n", msg.pedido);
-                msgsnd(queue, &msg, MSG_SIZE, 0);
-                switch (msg.pedido) {
-                    case 1:
-                        msgrcv(queue, &msg, MSG_SIZE, 7, 0);
-                        break;
-                    case 2:
-                        msgrcv(queue, &msg, MSG_SIZE, 8, 0);
-                        break;
-                    case 3:
-                        msgrcv(queue, &msg, MSG_SIZE, 9, 0);
-                        break;
-                }
+            srand(time(NULL)/(i+1) + getpid()*i);
+            msg.pedido = rand() % 3 + 1;
+            msg.type = 2;
+            printf("Cliente común: Pedido %d\n", msg.pedido);
+            msgsnd(queue, &msg, MSG_SIZE, 0);
+            switch (msg.pedido) {
+                case 1:
+                    msgrcv(queue, &msg, MSG_SIZE, 7, 0);
+                    break;
+                case 2:
+                    msgrcv(queue, &msg, MSG_SIZE, 8, 0);
+                    break;
+                case 3:
+                    msgrcv(queue, &msg, MSG_SIZE, 9, 0);
+                    break;
             }
+            printf("Cliente común: Marchándome contento\n");
             exit(0);
         }
     }
-
-    waitpid(pid_H, NULL, 0);
-    waitpid(pid_V, NULL, 0);
-    for (int i = 0; i < 2; i++) {
-        wait(NULL);
-    }
-    waitpid(pid_D, NULL, 0);
+    
     for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         wait(NULL);
     }
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         wait(NULL);
     }
+
+    // forzar la interrupción del programa una vez que los clientes se hayan marchado, matando a todos los hijos y despues al padre.
+    // el único propósito de esto es para que el programa no se quede bloqueado por culpa de los bucles infinitos de los empleados, y de esa forma, traben la ejecución del makefile.
+    kill(pid_H, SIGKILL);
+    kill(pid_V, SIGKILL);
+    kill(pid_P, SIGKILL);
+    kill(pid_P2, SIGKILL);
+    kill(pid_D, SIGKILL);
+
+    waitpid(pid_H, NULL, 0);
+    waitpid(pid_V, NULL, 0);
+    waitpid(pid_P, NULL, 0);
+    waitpid(pid_P2, NULL, 0);
+    waitpid(pid_D, NULL, 0);
 
     return 0;
 }
