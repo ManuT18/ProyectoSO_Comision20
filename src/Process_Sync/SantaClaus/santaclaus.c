@@ -20,7 +20,7 @@ sem_t sem_elfos;        // indica la cantidad de elfos
 pthread_t threads[3];
 
 void *thread_santa() {
-    for (int i = 0; i <= REPETITIONS; i++) {
+    for (int i = 0; i < REPETITIONS; i++) {
         sem_wait(&sem_santa);
         printf("\nSanta Claus: Despierta\n");
 
@@ -143,3 +143,159 @@ int main(int argc, char const *argv[]) {
 
     return 0;
 }
+
+/**
+ * Elfo 1 tiene problema
+
+Llega reno 1
+
+Llega reno 2
+
+Llega reno 3
+
+Llega reno 4
+
+Llega reno 5
+
+Llega reno 6
+
+Llega reno 7
+
+Llega reno 8
+
+Llega reno 9
+
+Elfo 2 tiene problema
+
+Elfo 3 tiene problema
+
+Santa Claus: Despierta
+
+Santa Claus: Preparando trineo
+Santa Claus: Trineo listo
+Santa Claus: Entregando regalos
+
+Santa volverá en un momento
+. . . . . 
+
+Santa Claus: Volvió
+
+
+Ya somos 3 elfos, vamos a acudir a Santa
+
+Santa Claus: Ayudando a los elfos
+
+Santa Claus: Ayudando al 1° elfo 
+
+Santa Claus: Ayudando al 2° elfo 
+
+Santa Claus: Ayudando al 3° elfo 
+
+Santa Claus: Terminé de ayudar a los elfos
+
+Santa Claus: Volviendo a dormir
+
+
+Llega reno 1
+
+Llega reno 2
+
+Llega reno 3
+
+Llega reno 4
+
+Llega reno 5
+
+Llega reno 6
+
+Llega reno 7
+
+Llega reno 8
+
+Llega reno 9
+
+Elfo 1 tiene problema
+
+Elfo 2 tiene problema
+
+Elfo 3 tiene problema
+
+Ya somos 3 elfos, vamos a acudir a Santa
+
+Santa Claus: Despierta
+
+Santa Claus: Preparando trineo
+Santa Claus: Trineo listo
+Santa Claus: Entregando regalos
+
+Santa volverá en un momento
+. . . . . 
+
+Santa Claus: Volvió
+
+
+Santa Claus: Ayudando a los elfos
+
+Santa Claus: Ayudando al 1° elfo 
+
+Santa Claus: Ayudando al 2° elfo 
+
+Santa Claus: Ayudando al 3° elfo 
+
+Santa Claus: Terminé de ayudar a los elfos
+
+Elfo 1 tiene problema
+
+Elfo 2 tiene problema
+
+Elfo 3 tiene problema
+
+Ya somos 3 elfos, vamos a acudir a Santa
+
+Llega reno 1
+
+Llega reno 2
+
+Llega reno 3
+
+Llega reno 4
+
+Llega reno 5
+
+Llega reno 6
+
+Llega reno 7
+
+Llega reno 8
+
+Llega reno 9
+
+Santa Claus: Volviendo a dormir
+
+
+Santa Claus: Despierta
+
+Santa Claus: Preparando trineo
+Santa Claus: Trineo listo
+Santa Claus: Entregando regalos
+
+Santa volverá en un momento
+. . . . . 
+
+Santa Claus: Volvió
+
+
+Santa Claus: Ayudando a los elfos
+
+Santa Claus: Ayudando al 1° elfo 
+
+Santa Claus: Ayudando al 2° elfo 
+
+Santa Claus: Ayudando al 3° elfo 
+
+Santa Claus: Terminé de ayudar a los elfos
+
+Santa Claus: Volviendo a dormir
+
+
+ */
