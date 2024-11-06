@@ -159,10 +159,8 @@ void *process_extras() {
 }
 
 int main(int argc, char const *argv[]) {
-    system("clear"); // limpiar la pantalla cada vez que se inicie el ejecutable.
     printf("### Iniciando la fabricación de motos ###\n### SE GENERARÁN %d MOTOS ###\n#########################################\n\n", ITERATIONS);
     fflush(stdout);
-
 
     sem_init(&sem_ruedas, 0, 2);
     sem_init(&sem_chasis, 0, 0);
