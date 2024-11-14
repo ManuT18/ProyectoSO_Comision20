@@ -23,21 +23,10 @@
 #include <fcntl.h>
 #include <fts.h>
 
-void mostrar_funcionando(char **args);
 void mostrar_ayuda(char **args);
-void crear_directorio(char **args);
-void eliminar_directorio(char **args);
-void cambiar_directorio(char **args);
-void crear_archivo(char **args);
-void listar_directorio(char **args);
-void mostrar_contenido_archivo(char **args);
-void cambiar_permisos_archivo(char **args);
-void mostrar_about(char **args);
 void mostrar_version(char **args);
 void limpiar_pantalla(char **args);
 void salir(char **args);
-
-char* permisos_a_modo_octal(char *permisos);
 
 typedef struct {
     char *command;
@@ -45,16 +34,7 @@ typedef struct {
 } Comando;
 
 Comando commands[] = {
-    {"test", mostrar_funcionando},
     {"help", mostrar_ayuda},
-    {"mkdir", crear_directorio},
-    {"rmdir", eliminar_directorio},
-    {"chdir", cambiar_directorio},
-    {"mkfile", crear_archivo},
-    {"list", listar_directorio},
-    {"show", mostrar_contenido_archivo},
-    {"chmod", cambiar_permisos_archivo},
-    {"about", mostrar_about},
     {"version", mostrar_version},
     {"clear", limpiar_pantalla},
     {"exit", salir},
@@ -83,208 +63,15 @@ void mostrar_ayuda(char **args) {
     fflush(stdout);
 }
 
-// implementación de "cd", cambiar directorio al que se pasa como argumento
-void cambiar_directorio(char **args) {
-    if (args[1] == NULL) {
-        // cambiar al directorio HOME
-        if (chdir(getenv("HOME")) != 0) {
-            fprintf(stderr, "minishell: Error al cambiar de directorio\n");
-            return;
-        }
-    }
-
-    if (chdir(args[1]) != 0) {
-        fprintf(stderr, "minishell: Error al cambiar de directorio\n");
-    }
-}
-
 void limpiar_pantalla(char **args) {
     // https://stackoverflow.com/questions/37774983/clearing-the-screen-by-printing-a-character
     printf("\033[H\033[J"); // código de escape ANSI para limpiar la pantalla
     fflush(stdout);
 }
 
-void mostrar_funcionando(char **args) {
-    printf("Funcionando!\n");
-    fflush(stdout);
-}
-
-void mostrar_about(char **args) {
-    printf("Minishell realizado por la comisión 20 de Sistemas Operativos.\n");
-    fflush(stdout);
-}
-
 void mostrar_version(char **args) {
     printf("Minishell v1.0\n");
-    fflush(stdout);
 }
-
-// Función para crear un directorio con permisos 0666 (rw-rw-rw-)
-void crear_directorio(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"mkdir\"\n");
-        return;
-    }
-
-    if (mkdir(args[1], 0666) != 0) {
-        fprintf(stderr, "minishell: Error al crear el directorio\n");
-    }
-}
-
-void eliminar_directorio(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"rmdir\"\n");
-        return;
-    }
-
-    if (rmdir(args[1]) != 0) {
-        fprintf(stderr, "minishell: No se pudo eliminar el directorio\n");
-    }
-}
-
-// Función para crear un archivo con permisos 0666 (rw-rw-rw-)
-void crear_archivo(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"mkfile\"\n");
-        return;
-    }
-
-    FILE *file = fopen(args[1], "w");
-    if (file == NULL) {
-        fprintf(stderr, "minishell: No se pudo abrir el archivo\n");
-    } else {
-        fclose(file);
-    }
-}
-
-void listar_directorio(char **args) {
-    // si no se pasa ningun argumento, listar el directorio actual
-    if (args[1] == NULL) {
-        args[1] = ".";
-    }
-
-    char dir[256];
-    strcpy(dir, args[1]);
-    dir[sizeof(dir) - 1] = '\0'; // null terminated
-    
-    /*
-    Usamos la librería FTS para recorrer el sistema de archivos de forma recursiva.
-    Esta decisión se sustenta en que FTS es parte del estándar POSIX y proporciona una forma más sencilla de recorrer el sistema de archivos que otras alternativas como opendir/readdir/closedir o la librería dirent.
-    https://man7.org/linux/man-pages/man3/fts.3.html
-    */
-    char *paths[] = { dir, NULL }; // Crear un array de paths con el directorio a listar (NULL terminated)
-    // Abrir el sistema de archivos para recorrerlo con la estructura FTS que es un árbol de directorios
-    // FTS_NOCHDIR: No cambiar de directorio al abrir un directorio
-    // FTS_PHYSICAL: No continuar con los enlaces simbólicos (solo listarlos)
-    FTS *ftsp = fts_open(paths, FTS_NOCHDIR | FTS_PHYSICAL, NULL); 
-    
-    if (ftsp == NULL) {
-        fprintf(stderr, "minishell: Error al abrir el sistema de archivos\n");
-        return;
-    }
-
-    FTSENT *node; // la estructura FTSENT contiene información sobre un nodo del sistema de archivos
-    while ((node = fts_read(ftsp)) != NULL) { // leer cada nodo del sistema de archivos
-        // listar los directorios y archivos recursivamente
-        switch (node->fts_info) {
-            case FTS_D:
-                printf("%s/\n", node->fts_name);
-                break;
-            case FTS_F:
-                printf("%s\n", node->fts_name);
-                break;
-            default:
-                break;
-        }
-    }
-
-    if (fts_close(ftsp) < 0) {
-        fprintf(stderr, "minishell: Error al cerrar el sistema de archivos\n");
-    }
-}
-
-void mostrar_contenido_archivo(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "minishell: Se espera un argumento para \"show\"\n");
-        return;
-    }
-
-    FILE *file = fopen(args[1], "r");
-    if (file == NULL) {
-        fprintf(stderr, "minishell: Error al abrir el archivo\n");
-        return;
-    }
-    char ch;
-    while ((ch = fgetc(file)) != EOF) {
-        putchar(ch);
-    }
-    fclose(file);
-}
-
-// Función para cambiar los permisos de un archivo
-void cambiar_permisos_archivo(char **args) {
-    if (args[1] == NULL || args[2] == NULL) {
-        fprintf(stderr, "minishell: Se esperan argumentos para \"chmod\"\n");
-        return;
-    }
-
-    // el primer argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
-    if (strlen(args[1]) != 9) {
-        fprintf(stderr, "minishell: Los permisos deben tener 9 caracteres\n");
-        return;
-    }
-
-    char *mode_str = permisos_a_modo_octal(args[1]);
-    if (mode_str == NULL) {
-        return;
-    }
-    mode_t mode = strtol(mode_str, 0, 8);
-    char *file = args[2];
-    printf("mode: %d\n", mode);
-    fflush(stdout);
-
-    if (chmod(file, mode) != 0) {
-        fprintf(stderr, "minishell: Error al cambiar los permisos del archivo\n");
-    }
-}
-
-// convierte un string de permisos a un string en octal
-char* permisos_a_modo_octal(char *permisos) {
-    static char octal[5];
-    int valor = 0;
-
-    for (int i = 0; i < 3; i++) {
-        valor = 0;
-        if (permisos[i*3] != 'r' && permisos[i*3] != '-') {
-            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3]);
-            return NULL;
-        }
-        if (permisos[i*3+1] != 'w' && permisos[i*3+1] != '-') {
-            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3+1]);
-            return NULL;
-        }
-        if (permisos[i*3+2] != 'x' && permisos[i*3+2] != '-') {
-            fprintf(stderr, "minishell: Permiso inválido: %c\n", permisos[i*3+2]);
-            return NULL;
-        }
-
-        if (permisos[i*3] == 'r') {
-            valor += 4;
-        }
-        if (permisos[i*3+1] == 'w') {
-            valor += 2;
-        }
-        if (permisos[i*3+2] == 'x') {
-            valor += 1;
-        }
-        octal[i+1] = '0' + valor; // índice corrido para dejar el primer carácter como '0'
-    }
-    octal[4] = '\0';
-    octal[0] = '0';
-
-    return octal;
-}
-
 
 int main() {
     char comando[256];
@@ -317,21 +104,13 @@ int main() {
         args[1] = strtok(NULL, " ");
         args[2] = strtok(NULL, " ");
 
-        int found = 0;
-        int i = 0;
-
-        while (!found && commands[i].command != NULL) {
-            if (strcmp(args[0], commands[i].command) == 0) {
-                commands[i].function(args);
-                found = 1;
-            }
-            i++;
+        pid_t pid = fork();
+        if (pid == 0) {
+            // buscar el binario dentro de la carpeta del archivo
+            execl(args[0], args[0], args[1], args[2], NULL);
         }
 
-        if (!found) {
-            printf("Comando desconocido: %s\n", args[0]);
-            fflush(stdout);
-        }
+        waitpid(pid);
     }
 
     return 0;
