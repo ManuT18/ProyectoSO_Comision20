@@ -9,7 +9,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define REPETITIONS 20
+#define REPETITIONS 1
 #define CANT_RENOS 9
 #define CANT_ELFOS 30
 
@@ -32,16 +32,22 @@ void *actividad_santa() {
         if (sem_trywait(&sem_renos) == -1) {
             printf("\nSanta Claus: Preparando trineo");
             fflush(stdout);
+            sleep(0.5);
 
             printf("\nSanta Claus: Trineo listo");
+            fflush(stdout);
+            sleep(0.5);
             printf("\nSanta Claus: Entregando regalos\n\nSanta volverá en un momento\n");
-
+            fflush(stdout);
+            
             for (int i = 5; i > 0; i--) {
                 printf(". ");
                 fflush(stdout);
+                sleep(0.5);
             }
 
             printf("\n\nSanta Claus: Volvió\n\n");
+            sleep(0.5);
 
             // si aparecieron elfos mientras estaba viajando, hicieron un signal de más en sem_santa. Debo consumirlo, total los voy a atender cuando vuelva
             if (sem_trywait(&sem_elfos_ayuda) == -1) {
@@ -63,13 +69,19 @@ void *actividad_santa() {
         // si hay 3 elfos esperando...
         if (sem_trywait((&sem_elfos_ayuda)) == -1) {
             printf("\nSanta Claus: Ayudando a los elfos\n");
+            fflush(stdout);
+            sleep(0.5);
 
             for (int i = 0; i < 3; i++) {
                 sem_post(&sem_elfos_ayuda);
                 printf("\nSanta Claus: Ayudando al %i° elfo \n", i + 1);
+                fflush(stdout);
+                sleep(0.5);
             }
 
             printf("\nSanta Claus: Terminé de ayudar a los elfos\n");
+            fflush(stdout);
+            sleep(0.5);
 
             sem_post(&sem_puerta_elfos);
         } else {
@@ -78,6 +90,7 @@ void *actividad_santa() {
 
         printf("\nSanta Claus: Volviendo a dormir\n\n");
         fflush(stdout);
+        sleep(0.5);
     }
 
     printf("\nSanta Claus se ha jubilado, ya no trabajará\n\n");
@@ -94,12 +107,15 @@ void *actividad_santa() {
     return NULL;
 }
 
-void *actividad_reno() {
+void *actividad_reno(void *id_reno) {
     sem_wait(&sem_renos);
-    printf("\nReno volvió de vacaciones\n");
+    printf("\nReno %i volvió de vacaciones\n", (int)id_reno);
+    fflush(stdout);
+    sleep(0.5);
 
     if (sem_trywait(&sem_renos) == -1) {
         printf("\nYa somos 9 renos, vamos a acudir a Santa\n");
+        fflush(stdout);
         sem_post(&sem_santa);
     } else {
         sem_post(&sem_renos);
@@ -110,13 +126,16 @@ void *actividad_reno() {
     return NULL;
 }
 
-void *actividad_elfo() {
+void *actividad_elfo(void *id_elfo) {
 
     sem_wait(&sem_elfos_ayuda);
-    printf("\nElfo tiene problema\n");
+    printf("\nElfo %i tiene problema\n", (int)id_elfo);
+    fflush(stdout);
+    sleep(0.5);
 
     if (sem_trywait(&sem_elfos_ayuda) == -1) {
         printf("\nYa somos 3 elfos, vamos a acudir a Santa\n");
+        fflush(stdout);
         sem_post(&sem_santa);
     } else {
         sem_post(&sem_elfos_ayuda);
@@ -133,10 +152,10 @@ int main(int argc, char const *argv[]) {
     sem_init(&sem_puerta_elfos, 0, 1);
 
     for (int i = 0; i < CANT_RENOS; i++) {
-        pthread_create(&threads_renos[i], NULL, actividad_reno, NULL);
+        pthread_create(&threads_renos[i], NULL, actividad_reno, (i+1));
     }
     for (int i = 0; i < CANT_ELFOS; i++) {
-        pthread_create(&threads_elfos[i], NULL, actividad_elfo, NULL);
+        pthread_create(&threads_elfos[i], NULL, actividad_elfo, (i+1));
     }
     pthread_create(&thread_santa, NULL, actividad_santa, NULL);
 

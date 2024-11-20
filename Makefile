@@ -64,3 +64,4 @@ $(BIN_DIR)/Process_Sync/SantaClaus:
 # Limpiar todos los ejecutables
 clean:
 	rm -f $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
+	rm -R $(BIN_DIR)
