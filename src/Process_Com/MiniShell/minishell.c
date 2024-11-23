@@ -106,14 +106,23 @@ int main() {
         args[2] = strtok(NULL, " "); // argumento 2
 
         char path[256];
-        snprintf(path, sizeof(path), "./cmd/%s", args[0]);
+        snprintf(path, sizeof(path), "bin/Process_Com/MiniShell/cmd/%s", args[0]);
+        printf("%s\n", path);
 
-        pid_t pid = fork();
+        // mostrar el directorio actual
+        if (strcmp(args[0], "pwd") == 0) {
+            printf("%s\n", cwd);
+            continue;
+        }
+
+        printf("%s%s\n", cwd, path);
+
+        pid_t pid = vfork();
         if (pid == 0) {
             // buscar el binario dentro de "/cmd"
-            if (execlp(path, args[0], args[1], args[2], NULL) == -1) {
+            if (execv(path, args) == -1) {
                 fprintf(stderr, "minishell: Comando no encontrado\n");
-                exit(1);
+                exit(-1);
             }
         } else {
             waitpid(pid, NULL, 0);
