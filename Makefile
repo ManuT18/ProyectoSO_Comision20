@@ -3,34 +3,44 @@ CC = gcc
 CFLAGS = -Wall -lm -pthread
 
 # Directorios de fuente y binario
-SRC_DIR = src
-BIN_DIR = bin
+SRC = src
+BIN = bin
+
+# Lista de todos los fuentes en la carpeta MiniShell/cmd
+MINISHELL_COMMANDS_SOURCES = $(wildcard $(SRC)/Process_Com/MiniShell/cmd/*.c)
+# Transformación de los nombres de los fuentes a estilo binario (sin extensión)
+MINISHELL_COMMANDS_BINARIES = $(patsubst $(SRC)/Process_Com/MiniShell/cmd/%.c, $(BIN)/Process_Com/MiniShell/cmd/%, $(MINISHELL_COMMANDS_SOURCES))
 
 # Ejecutables en el directorio bin
-MINISHELL = $(BIN_DIR)/Process_Com/MiniShell/minishell
-PUMPER_QUEUES = $(BIN_DIR)/Process_Com/PumperInc/pumper_queues
-PUMPER_PIPES = $(BIN_DIR)/Process_Com/PumperInc/pumper_pipes
-MOTOS = $(BIN_DIR)/Process_Sync/Motos/motos
-SANTACLAUS = $(BIN_DIR)/Process_Sync/SantaClaus/santaclaus
+MINISHELL = $(BIN)/Process_Com/MiniShell/minishell
+PUMPER_QUEUES = $(BIN)/Process_Com/PumperInc/pumper_queues
+PUMPER_PIPES = $(BIN)/Process_Com/PumperInc/pumper_pipes
+MOTOS = $(BIN)/Process_Sync/Motos/motos
+SANTACLAUS = $(BIN)/Process_Sync/SantaClaus/santaclaus
 
-# Compilación de cada archivo, enviando los binarios a la carpeta bin
-$(MINISHELL): $(SRC_DIR)/Process_Com/MiniShell/minishell.c | $(BIN_DIR)/Process_Com/MiniShell
-	$(CC) $(CFLAGS) -o $(MINISHELL) $(SRC_DIR)/Process_Com/MiniShell/minishell.c
+## Compilación de cada archivo, enviando los binarios a la carpeta bin.
 
-$(PUMPER_QUEUES): $(SRC_DIR)/Process_Com/PumperInc/pumper_queues.c | $(BIN_DIR)/Process_Com/PumperInc
-	$(CC) $(CFLAGS) -o $(PUMPER_QUEUES) $(SRC_DIR)/Process_Com/PumperInc/pumper_queues.c
+# Compilación de los comandos de minishell
+$(BIN)/Process_Com/MiniShell/cmd/%: $(SRC)/Process_Com/MiniShell/cmd/%.c | $(BIN)/Process_Com/MiniShell/cmd
+	$(CC) $(CFLAGS) -o $@ $<
 
-$(PUMPER_PIPES): $(SRC_DIR)/Process_Com/PumperInc/pumper_pipes.c | $(BIN_DIR)/Process_Com/PumperInc
-	$(CC) $(CFLAGS) -o $(PUMPER_PIPES) $(SRC_DIR)/Process_Com/PumperInc/pumper_pipes.c
+$(MINISHELL): $(SRC)/Process_Com/MiniShell/minishell.c | $(BIN)/Process_Com/MiniShell
+	$(CC) $(CFLAGS) -o $(MINISHELL) $(SRC)/Process_Com/MiniShell/minishell.c
 
-$(MOTOS): $(SRC_DIR)/Process_Sync/Motos/motos.c | $(BIN_DIR)/Process_Sync/Motos
-	$(CC) $(CFLAGS) -o $(MOTOS) $(SRC_DIR)/Process_Sync/Motos/motos.c
+$(PUMPER_QUEUES): $(SRC)/Process_Com/PumperInc/pumper_queues.c | $(BIN)/Process_Com/PumperInc
+	$(CC) $(CFLAGS) -o $(PUMPER_QUEUES) $(SRC)/Process_Com/PumperInc/pumper_queues.c
 
-$(SANTACLAUS): $(SRC_DIR)/Process_Sync/SantaClaus/santaclaus.c | $(BIN_DIR)/Process_Sync/SantaClaus
-	$(CC) $(CFLAGS) -o $(SANTACLAUS) $(SRC_DIR)/Process_Sync/SantaClaus/santaclaus.c
+$(PUMPER_PIPES): $(SRC)/Process_Com/PumperInc/pumper_pipes.c | $(BIN)/Process_Com/PumperInc
+	$(CC) $(CFLAGS) -o $(PUMPER_PIPES) $(SRC)/Process_Com/PumperInc/pumper_pipes.c
+
+$(MOTOS): $(SRC)/Process_Sync/Motos/motos.c | $(BIN)/Process_Sync/Motos
+	$(CC) $(CFLAGS) -o $(MOTOS) $(SRC)/Process_Sync/Motos/motos.c
+
+$(SANTACLAUS): $(SRC)/Process_Sync/SantaClaus/santaclaus.c | $(BIN)/Process_Sync/SantaClaus
+	$(CC) $(CFLAGS) -o $(SANTACLAUS) $(SRC)/Process_Sync/SantaClaus/santaclaus.c
 
 # Objetivo para compilar todos los ejecutables
-all: $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
+all: $(MINISHELL_COMMANDS_BINARIES) $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
 
 # Objetivos para ejecutar cada programa individualmente
 run_minishell: $(MINISHELL)
@@ -49,19 +59,23 @@ run_santaclaus: $(SANTACLAUS)
 	./$(SANTACLAUS)
 
 # Crear directorios bin si no existen
-$(BIN_DIR)/Process_Com/MiniShell:
-	mkdir -p $(BIN_DIR)/Process_Com/MiniShell
 
-$(BIN_DIR)/Process_Com/PumperInc:
-	mkdir -p $(BIN_DIR)/Process_Com/PumperInc
+$(BIN)/Process_Com/MiniShell/cmd:
+	mkdir -p $(BIN)/Process_Com/MiniShell/cmd
 
-$(BIN_DIR)/Process_Sync/Motos:
-	mkdir -p $(BIN_DIR)/Process_Sync/Motos
+$(BIN)/Process_Com/MiniShell:
+	mkdir -p $(BIN)/Process_Com/MiniShell
 
-$(BIN_DIR)/Process_Sync/SantaClaus:
-	mkdir -p $(BIN_DIR)/Process_Sync/SantaClaus
+$(BIN)/Process_Com/PumperInc:
+	mkdir -p $(BIN)/Process_Com/PumperInc
 
-# Limpiar todos los ejecutables
+$(BIN)/Process_Sync/Motos:
+	mkdir -p $(BIN)/Process_Sync/Motos
+
+$(BIN)/Process_Sync/SantaClaus:
+	mkdir -p $(BIN)/Process_Sync/SantaClaus
+
+# Limpiar la carpeta de binarios
 clean:
-	rm -f $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
-	rm -R $(BIN_DIR)
+	rm -f $(MINISHELL_COMMANDS_BINARIES) $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
+	rm -R $(BIN)
