@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <fts.h>
 
@@ -98,19 +99,25 @@ int main() {
             continue;
         }
 
-        comando[strcspn(comando, "\n")] = '\0'; // para que no tome el enter
+        comando[strcspn(comando, "\n")] = '\0'; // para que no tome el enter al final del comando
 
-        args[0] = strtok(comando, " ");
-        args[1] = strtok(NULL, " ");
-        args[2] = strtok(NULL, " ");
+        args[0] = strtok(comando, " "); // nombre del comando
+        args[1] = strtok(NULL, " "); // argumento 1
+        args[2] = strtok(NULL, " "); // argumento 2
+
+        char path[256];
+        snprintf(path, sizeof(path), "./cmd/%s", args[0]);
 
         pid_t pid = fork();
         if (pid == 0) {
-            // buscar el binario dentro de la carpeta del archivo
-            execl(args[0], args[0], args[1], args[2], NULL);
+            // buscar el binario dentro de "/cmd"
+            if (execlp(path, args[0], args[1], args[2], NULL) == -1) {
+                fprintf(stderr, "minishell: Comando no encontrado\n");
+                exit(1);
+            }
+        } else {
+            waitpid(pid, NULL, 0);
         }
-
-        waitpid(pid);
     }
 
     return 0;

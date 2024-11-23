@@ -8,7 +8,7 @@
 int main (int argc, char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"mkdir\"\n");
-        return;
+        return -1;
     }
 
     if (mkdir(args[1], 0666) != 0) {

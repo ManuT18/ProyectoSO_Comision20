@@ -26,7 +26,7 @@ int main (int argc, char **args) {
     
     if (ftsp == NULL) {
         fprintf(stderr, "minishell: Error al abrir el sistema de archivos\n");
-        return;
+        return -1;
     }
 
     FTSENT *node; // la estructura FTSENT contiene información sobre un nodo del sistema de archivos

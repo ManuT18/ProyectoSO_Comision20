@@ -5,7 +5,7 @@
 int main (int argc, char **args) {
     if (args[1] == NULL) {
         fprintf(stderr, "minishell: Se espera un argumento para \"mkfile\"\n");
-        return;
+        return -1; 
     }
 
     FILE *file = fopen(args[1], "w");

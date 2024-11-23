@@ -11,18 +11,18 @@ char* permisos_a_modo_octal(char *permisos);
 int main (int argc, char **args) {
     if (args[1] == NULL || args[2] == NULL) {
         fprintf(stderr, "minishell: Se esperan argumentos para \"chmod\"\n");
-        return;
+        return -1;
     }
 
     // el primer argumento debe tener una longitud de 9 caracteres para que sea un permiso posiblemente valido
     if (strlen(args[1]) != 9) {
         fprintf(stderr, "minishell: Los permisos deben tener 9 caracteres\n");
-        return;
+        return -1;
     }
 
     char *mode_str = permisos_a_modo_octal(args[1]);
     if (mode_str == NULL) {
-        return;
+        return -1;
     }
     mode_t mode = strtol(mode_str, 0, 8);
     char *file = args[2];

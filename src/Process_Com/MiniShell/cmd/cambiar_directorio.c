@@ -8,7 +8,7 @@ int main (int argc, char **args) {
         // cambiar al directorio HOME
         if (chdir(getenv("HOME")) != 0) {
             fprintf(stderr, "minishell: Error al cambiar de directorio\n");
-            return;
+            return -1;
         }
     }
 
