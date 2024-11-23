@@ -107,15 +107,6 @@ int main() {
 
         char path[256];
         snprintf(path, sizeof(path), "bin/Process_Com/MiniShell/cmd/%s", args[0]);
-        printf("%s\n", path);
-
-        // mostrar el directorio actual
-        if (strcmp(args[0], "pwd") == 0) {
-            printf("%s\n", cwd);
-            continue;
-        }
-
-        printf("%s%s\n", cwd, path);
 
         pid_t pid = vfork();
         if (pid == 0) {
