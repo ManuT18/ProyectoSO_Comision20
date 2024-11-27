@@ -37,7 +37,7 @@
 
 #define REPETITIONS 100
 #define NUM_CLIENTES_COMUNES 10
-#define NUM_CLIENTES_VIP 2
+#define NUM_CLIENTES_VIP 4
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +64,7 @@ int pipe_devolucion[2]; // pipe para la comunicación entre los cocineros y Desp
 int pipe_D_C_H[2]; // pipe para la comunicación entre Despachador (D) y los clientes para hamburguesas
 int pipe_D_C_V[2]; // pipe para la comunicación entre Despachador (D) y los clientes para menú vegano
 int pipe_D_C_P[2]; // pipe para la comunicación entre Despachador (D) y los clientes para papas fritas
+int pipe_puerta[2]; // pipe para que los clientes se "anuncien" ante el despachador cuando llegan
 
 int main() {
     pipe(pipe_CN_D);
@@ -75,6 +76,7 @@ int main() {
     pipe(pipe_D_C_V);
     pipe(pipe_D_C_P);
     pipe(pipe_devolucion);
+    pipe(pipe_puerta);
 
     // configurar los pipes para que las lecturas sean no bloqueantes
     fcntl(pipe_CN_D[0], F_SETFL, O_NONBLOCK);
@@ -99,7 +101,9 @@ int main() {
         close(pipe_D_C_V[1]);
         close(pipe_D_C_P[0]);
         close(pipe_D_C_P[1]);
-        close(pipe_devolucion[0]);
+        close(pipe_devolucion[0]); 
+        close(pipe_puerta[0]);
+        close(pipe_puerta[1]);
 
         while (1) {
             read(pipe_D_H[0], &pedido, sizeof(int));
@@ -133,6 +137,8 @@ int main() {
         close(pipe_D_C_P[0]);
         close(pipe_D_C_P[1]);
         close(pipe_devolucion[0]);
+        close(pipe_puerta[0]);
+        close(pipe_puerta[1]);
 
         while (1) {
             read(pipe_D_V[0], &pedido, sizeof(int));
@@ -169,6 +175,8 @@ int main() {
             close(pipe_D_C_P[0]);
             close(pipe_D_C_P[1]);
             close(pipe_devolucion[0]);
+            close(pipe_puerta[0]);
+            close(pipe_puerta[1]);
 
             while (1) {
                 read(pipe_D_P[0], &pedido, sizeof(int));
@@ -195,15 +203,16 @@ int main() {
         close(pipe_D_C_H[0]);
         close(pipe_D_C_V[0]);
         close(pipe_D_C_P[0]);
+        close(pipe_puerta[1]);
 
         pthread_t hilo_despachar_pedidos;
         pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
-        while (1) {
-            while (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
+        // podria usar un tercer pipe donde se anuncien los clientes
+        while (read(pipe_puerta[0], &pedido, sizeof(int))) {
+            if (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
             }
-
             if (read(pipe_CN_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
             }
@@ -223,6 +232,7 @@ int main() {
         close(pipe_D_C_P[1]);
         close(pipe_devolucion[0]);
         close(pipe_devolucion[1]);
+        close(pipe_puerta[0]);
         exit(0);
     }
 
@@ -245,11 +255,13 @@ int main() {
             close(pipe_D_C_P[1]);
             close(pipe_devolucion[0]);
             close(pipe_devolucion[1]);
+            close(pipe_puerta[0]);
 
             srand(time(NULL)/(i+1) + getpid()*i);
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
             printf("Cliente Normal: Pedido %d\n", pedido);
+            write(pipe_puerta[1], &pedido, sizeof(int));
             write(pipe_CN_D[1], &pedido, sizeof(int));
             // pasa a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
@@ -259,6 +271,7 @@ int main() {
             close(pipe_D_C_H[0]);
             close(pipe_D_C_V[0]);
             close(pipe_D_C_P[0]);
+            close(pipe_puerta[1]);
 
             exit(0);
         }
@@ -283,11 +296,13 @@ int main() {
             close(pipe_D_C_P[1]);
             close(pipe_devolucion[0]);
             close(pipe_devolucion[1]);
+            close(pipe_puerta[0]);
 
             srand(time(NULL)*i + getpid()/(i+1));
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
             printf("Cliente VIP: Pedido %d\n", pedido);
+            write(pipe_puerta[1], &pedido, sizeof(int));
             write(pipe_CV_D[1], &pedido, sizeof(int));
             // se va a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
@@ -297,6 +312,7 @@ int main() {
             close(pipe_D_C_H[0]);
             close(pipe_D_C_V[0]);
             close(pipe_D_C_P[0]);
+            close(pipe_puerta[1]);
 
             exit(0);
         }
@@ -320,6 +336,8 @@ int main() {
     close(pipe_D_C_P[1]);
     close(pipe_devolucion[0]);
     close(pipe_devolucion[1]);
+    close(pipe_puerta[0]);
+    close(pipe_puerta[1]);
 
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         wait(NULL);
