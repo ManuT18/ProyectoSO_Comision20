@@ -10,6 +10,7 @@ El proyecto se organiza en dos directorios principales:
 - **`src/`**: Contiene los archivos fuente del proyecto.
   - **`Process_Com/`**: Implementaciones relacionadas con la comunicación de procesos.
     - **`Minishell/`**: Shell interactiva.
+      - **`cmd/`**: Directorio de comandos de la shell.
     - **`PumperInc/`**: Implementaciones de sistemas de colas y pipes.
   - **`Process_Sync/`**: Implementaciones relacionadas con la sincronización de procesos.
     - **`Motos/`**: Ejemplo de sincronización de varios procesos.
@@ -39,7 +40,7 @@ El proyecto se organiza en dos directorios principales:
    make all
    ```
 
-   Esto generará los archivos binarios dentro de la carpeta `bin/`, correspondientes a cada módulo.
+   Esto generará los archivos binarios dentro de la carpeta `bin/`, correspondientes a cada módulo, al igual que compilará todos los comandos de la shell.
 
 ### Ejecución de los Programas
 
