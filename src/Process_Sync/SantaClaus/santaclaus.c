@@ -17,7 +17,7 @@ sem_t sem_santa;        // para que Santa se despierte. Tiene un comportamiento 
 sem_t sem_santa_volvio; // para indicar que Santa volvió de entregar los regalos. Es binario
 sem_t sem_puerta_elfos; // para que los elfos nuevos esperen atrás de una puerta a que Santa termine de ayudar a los elfos viejos (simula una puerta que se cierra cuando hay 3 elfos adentro). Es binario
 sem_t sem_renos;        // indica la cantidad total de renos 
-sem_t sem_elfos_ayuda;        // indica la cantidad de elfos máxima que pueden pedir ayuda a Santa
+sem_t sem_elfos_ayuda;  // indica la cantidad de elfos máxima que pueden pedir ayuda a Santa
 
 pthread_t threads_renos[CANT_RENOS];
 pthread_t threads_elfos[CANT_ELFOS];
@@ -108,6 +108,7 @@ void *actividad_santa() {
 }
 
 void *actividad_reno(void *id_reno) {
+    // necesito otro semaforo para saber cuando pueden entrar los nueve
     sem_wait(&sem_renos);
     printf("\nReno %i volvió de vacaciones\n", (int)id_reno);
     fflush(stdout);
@@ -127,7 +128,6 @@ void *actividad_reno(void *id_reno) {
 }
 
 void *actividad_elfo(void *id_elfo) {
-
     sem_wait(&sem_elfos_ayuda);
     printf("\nElfo %i tiene problema\n", (int)id_elfo);
     fflush(stdout);

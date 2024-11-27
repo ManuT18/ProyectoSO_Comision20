@@ -49,7 +49,7 @@ struct msg_buffer {
 
 #define KEY 1234
 #define NUM_CLIENTES_COMUNES 8
-#define NUM_CLIENTES_VIP 9
+#define NUM_CLIENTES_VIP 0
 #define MSG_SIZE sizeof(struct msg_buffer) - sizeof(long)
 
 void* despachar_pedidos();
@@ -131,7 +131,7 @@ int main() {
                 }
                 msgsnd(queue, &msg, MSG_SIZE, 0);
             }
-
+// revisar lo del tipo negativo y valor absoluto
             if (msgrcv(queue, &msg, MSG_SIZE, 2, IPC_NOWAIT) != -1) {
                 printf("Despachador: Pedido común de tipo %d\n", msg.pedido);
                 switch (msg.pedido) {

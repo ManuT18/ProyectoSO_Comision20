@@ -15,7 +15,7 @@ pthread_mutex_t mutex;
 pthread_t threads[6];
 
 #define ITERATIONS 9
-
+// cada cuatro ruedas hay un extra
 void *process_ruedas() {
     for (int i = 0; i < 2*ITERATIONS; i++) {
         sem_wait(&sem_ruedas);
