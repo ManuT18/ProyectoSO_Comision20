@@ -208,8 +208,7 @@ int main() {
         pthread_t hilo_despachar_pedidos;
         pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
-        // podria usar un tercer pipe donde se anuncien los clientes
-        while (read(pipe_puerta[0], &pedido, sizeof(int))) {
+        while (read(pipe_puerta[0], &pedido, sizeof(int)) > 0) {
             if (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
             }

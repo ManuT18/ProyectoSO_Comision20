@@ -48,8 +48,8 @@ struct msg_buffer {
 // el tipo 9 es para que el despachador le indique al cliente que su pedido de papas fritas está listo
 
 #define KEY 1234
-#define NUM_CLIENTES_COMUNES 8
-#define NUM_CLIENTES_VIP 0
+#define NUM_CLIENTES_COMUNES 16
+#define NUM_CLIENTES_VIP 14
 #define MSG_SIZE sizeof(struct msg_buffer) - sizeof(long)
 
 void* despachar_pedidos();
@@ -114,9 +114,11 @@ int main() {
         pthread_t hilo_despachar_pedidos;
         pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
-        while (1) {
-            // primero chequeo todos los pedidos de los clientes VIP
-            while (msgrcv(queue, &msg, MSG_SIZE, 1, IPC_NOWAIT) != -1) {
+        // la lectura accede al mensaje cuyo tipo sea <= |-2| y a la vez sea el menor de todos.
+        // es decir, si hay mensajes de tipo 1 y 2, accede primero a los de tipo 1 y luego a los de tipo 2.
+        // si solo hay mensajes de tipo 2, los accederá de igual forma ya que cumplen la condición.
+        while (msgrcv(queue, &msg, MSG_SIZE, -2, 0) != -1) {
+            if (msg.type == 1) {
                 printf("Despachador: Pedido VIP de tipo %d\n", msg.pedido);
                 switch (msg.pedido) {
                     case 1:
@@ -131,8 +133,8 @@ int main() {
                 }
                 msgsnd(queue, &msg, MSG_SIZE, 0);
             }
-// revisar lo del tipo negativo y valor absoluto
-            if (msgrcv(queue, &msg, MSG_SIZE, 2, IPC_NOWAIT) != -1) {
+
+            if (msg.type == 2) {
                 printf("Despachador: Pedido común de tipo %d\n", msg.pedido);
                 switch (msg.pedido) {
                     case 1:
@@ -159,11 +161,13 @@ int main() {
         pid_CV = fork();
         if (pid_CV == 0) {
             int queue = msgget(KEY, 0666);
+
             srand(time(NULL)*i + getpid()/(i+1));
             msg.pedido = rand() % 3 + 1;
             msg.type = 1;
             printf("Cliente VIP: Pedido %d\n", msg.pedido);
             msgsnd(queue, &msg, MSG_SIZE, 0);
+
             switch (msg.pedido) {
                 case 1:
                     msgrcv(queue, &msg, MSG_SIZE, 7, 0);
@@ -186,11 +190,13 @@ int main() {
         pid_CC = fork();
         if (pid_CC == 0) {
             int queue = msgget(KEY, 0666);
+
             srand(time(NULL)/(i+1) + getpid()*i);
             msg.pedido = rand() % 3 + 1;
             msg.type = 2;
             printf("Cliente común: Pedido %d\n", msg.pedido);
             msgsnd(queue, &msg, MSG_SIZE, 0);
+            
             switch (msg.pedido) {
                 case 1:
                     msgrcv(queue, &msg, MSG_SIZE, 7, 0);
