@@ -11,12 +11,10 @@
  * (a) Describa las políticas seleccionadas para el modelo e implementación del problema utilizando procesos y pipes para la comunicación entre los participantes. Los procesos pueden utilizar hilos internamente para resolver algunas cuestiones.
  * 
  * (b) Resuelve el mismo problema pero utilizando colas de mensajes, detalle las políticas seleccionadas para el modelo, diseño e implementación. ¿Tiene alguna ventaja esta implementación?
- */
-
-
-/**
- * Modelo:
  * 
+ * Esta implementación tiene la ventaja de que sólo se necesita un único medio de comunicación entre los procesos, que es la cola de mensajes. Esto ahorra espacio en memoria y tiempo de ejecución, ya que no se necesitan crear pipes ni hilos para la comunicación entre los procesos.
+ * Por otro lado, la identificación de los mensajes se hace con los tipos, a diferencia del modelo con pipes donde se necesita un pipe diferente para cada tipo de mensaje (y dos si la comunicación es bidireccional), sin mencionar que se debe codificar el abrir y cerrar cada uno de ellos.
+ * En esta nueva versión, se soluciona un problema de espera ocupada entre el despachador y los clientes. Ahora, el despachador realiza lecturas en la cola buscando mensajes de tipo menor o igual a 2, por lo que siempre atenderá clientes VIP de haberlos, y luego a los clientes comunes.
  */
 
 #include <stdio.h>
