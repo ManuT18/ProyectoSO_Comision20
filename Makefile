@@ -43,7 +43,7 @@ $(SANTACLAUS): $(SRC)/Process_Sync/SantaClaus/santaclaus.c | $(BIN)/Process_Sync
 all: $(MINISHELL_COMMANDS_BINARIES) $(MINISHELL) $(PUMPER_QUEUES) $(PUMPER_PIPES) $(MOTOS) $(SANTACLAUS)
 
 # Objetivos para ejecutar cada programa individualmente
-run_minishell: $(MINISHELL)
+run_minishell: $(MINISHELL) $(MINISHELL_COMMANDS_BINARIES)
 	./$(MINISHELL)
 
 run_pumper_queues: $(PUMPER_QUEUES)
