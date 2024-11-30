@@ -217,6 +217,23 @@ int main() {
             }
         }
 
+        /*
+         * Una solución alternativa es que los clientes y el despachador cuenten con una variable tipo_cliente que sirve para que el despachador identifique si el cliente es común o VIP, y hacer la lectura bloqueante sobre el pipe correspondiente. Si bien se agrega una variable más en los tres procesos, se evita la lectura no-bloqueante innecesaria sobre el otro pipe del cliente que no realizó un pedido, y se evita configurar como no bloqueantes los dos pipes de los clientes. Ahora, los clientes escriben en este pipe de puerta antes de hacer el pedido, más parecido a la realidad.
+         El código sería el siguiente, asumiendo la existencia de la variable mencionada, donde 8 y 9 son los códigos para clientes VIP y comunes respectivamente.
+        while (1) {
+            read(pipe_puerta[0], &tipo_cliente, sizeof(int)); // lectura bloqueante
+            switch (tipo_cliente) {
+                case 8:
+                    read(pipe_CC_D[0], &pedido, sizeof(int)); // lectura bloqueante
+                    break;
+                case 9:
+                    read(pipe_CV_D[0], &pedido, sizeof(int)); // lectura bloqueante
+                    break;
+            }
+            atender_pedido(pedido);
+        } 
+         */
+
         pthread_join(hilo_despachar_pedidos, NULL);
 
         close(pipe_CC_D[0]);
