@@ -33,9 +33,12 @@
  *      - 1: solo hamburguesa
  *      - 2: solo menú vegano
  *      - 3: solo papas fritas
+ * 
+ * El código para identificar los clientes sera:
+ *      - 8: cliente común
+ *      - 9: cliente VIP
  */
 
-#define REPETITIONS 100
 #define NUM_CLIENTES_COMUNES 10
 #define NUM_CLIENTES_VIP 4
 
@@ -77,10 +80,6 @@ int main() {
     pipe(pipe_D_C_P);
     pipe(pipe_devolucion);
     pipe(pipe_puerta);
-
-    // configurar los pipes para que las lecturas sean no bloqueantes
-    fcntl(pipe_CN_D[0], F_SETFL, O_NONBLOCK);
-    fcntl(pipe_CV_D[0], F_SETFL, O_NONBLOCK);
 
     // proceso del empleado que prepara hamburguesas: lee de pipe_D_H[0] y escribe en pipe_H_D[1]
     pid_t pid_H;
@@ -197,6 +196,8 @@ int main() {
     pid_t pid_D;
     pid_D = fork();
     if (pid_D == 0) {
+        int tipo_cliente;
+
         close(pipe_D_H[0]);
         close(pipe_D_V[0]);
         close(pipe_D_P[0]);
@@ -208,13 +209,18 @@ int main() {
         pthread_t hilo_despachar_pedidos;
         pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
-        while (read(pipe_puerta[0], &pedido, sizeof(int)) > 0) {
-            if (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
-                atender_pedido(pedido);
+        while (1) {
+            read(pipe_puerta[0], &tipo_cliente, sizeof(int));
+
+            switch (tipo_cliente) {
+                case 8:
+                    read(pipe_CN_D[0], &pedido, sizeof(int));
+                    break;
+                case 9:
+                    read(pipe_CV_D[0], &pedido, sizeof(int));
+                    break;
             }
-            if (read(pipe_CN_D[0], &pedido, sizeof(int)) > 0) {
-                atender_pedido(pedido);
-            }
+            atender_pedido(pedido);
         }
 
         pthread_join(hilo_despachar_pedidos, NULL);
@@ -240,6 +246,8 @@ int main() {
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         pid_CN = fork();
         if (pid_CN == 0) {
+            int tipo_cliente = 8;
+
             close(pipe_CN_D[0]);
             close(pipe_CV_D[0]);
             close(pipe_CV_D[1]);
@@ -259,8 +267,8 @@ int main() {
             srand(time(NULL)/(i+1) + getpid()*i);
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
+            write(pipe_puerta[1], &tipo_cliente, sizeof(int));
             printf("Cliente Normal: Pedido %d\n", pedido);
-            write(pipe_puerta[1], &pedido, sizeof(int));
             write(pipe_CN_D[1], &pedido, sizeof(int));
             // pasa a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
@@ -281,6 +289,8 @@ int main() {
     for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         pid_CV = fork();
         if (pid_CV == 0) {
+            int tipo_cliente = 9;
+
             close(pipe_CN_D[0]);
             close(pipe_CN_D[1]);
             close(pipe_CV_D[0]);
@@ -301,7 +311,7 @@ int main() {
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
             printf("Cliente VIP: Pedido %d\n", pedido);
-            write(pipe_puerta[1], &pedido, sizeof(int));
+            write(pipe_puerta[1], &tipo_cliente, sizeof(int));
             write(pipe_CV_D[1], &pedido, sizeof(int));
             // se va a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
