@@ -55,7 +55,7 @@ void *esperar_pedido(int pedido);
 
 int pedido;
 
-int pipe_CN_D[2]; // pipe para la comunicación entre Cliente Normal (CN) y Despachador (D)
+int pipe_CC_D[2]; // pipe para la comunicación entre Cliente Común (CC) y Despachador (D)
 int pipe_CV_D[2]; // pipe para la comunicación entre Cliente VIP (CV) y Despachador (D)
 int pipe_D_H[2]; // pipe para la comunicación entre Despachador (D) y Hamburguesero (H)
 int pipe_D_V[2]; // pipe para la comunicación entre Despachador (D) y el cocinero del Menú Vegano (V)
@@ -67,7 +67,7 @@ int pipe_D_C_P[2]; // pipe para la comunicación entre Despachador (D) y los cli
 int pipe_puerta[2]; // pipe para que los clientes se "anuncien" ante el despachador cuando llegan.
 
 int main() {
-    pipe(pipe_CN_D);
+    pipe(pipe_CC_D);
     pipe(pipe_CV_D);
     pipe(pipe_D_H);
     pipe(pipe_D_V);
@@ -79,15 +79,15 @@ int main() {
     pipe(pipe_puerta);
 
     // configurar los pipes de los clientes como no bloqueantes
-    fcntl(pipe_CN_D[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipe_CC_D[0], F_SETFL, O_NONBLOCK);
     fcntl(pipe_CV_D[0], F_SETFL, O_NONBLOCK);
 
     // proceso del empleado que prepara hamburguesas: lee de pipe_D_H[0] y escribe en pipe_H_D[1]
     pid_t pid_H;
     pid_H = fork();
     if (pid_H == 0) {
-        close(pipe_CN_D[0]);
-        close(pipe_CN_D[1]);
+        close(pipe_CC_D[0]);
+        close(pipe_CC_D[1]);
         close(pipe_CV_D[0]);
         close(pipe_CV_D[1]);
         close(pipe_D_H[1]);
@@ -121,8 +121,8 @@ int main() {
     pid_t pid_V;
     pid_V = fork();
     if (pid_V == 0) {
-        close(pipe_CN_D[0]);
-        close(pipe_CN_D[1]);
+        close(pipe_CC_D[0]);
+        close(pipe_CC_D[1]);
         close(pipe_CV_D[0]);
         close(pipe_CV_D[1]);
         close(pipe_D_H[0]);
@@ -159,8 +159,8 @@ int main() {
         pid_P = fork();
         i == 2 ? pid_P2 = pid_P : 0; // obtener el pid del segundo empleado que prepara papas fritas
         if (pid_P == 0) {
-            close(pipe_CN_D[0]);
-            close(pipe_CN_D[1]);
+            close(pipe_CC_D[0]);
+            close(pipe_CC_D[1]);
             close(pipe_CV_D[0]);
             close(pipe_CV_D[1]);
             close(pipe_D_H[0]);
@@ -192,7 +192,7 @@ int main() {
     }
 
     // proceso despachador:
-    // con un hilo (el principal) lee en forma no bloqueante de pipe_CN_D[0] y pipe_CV_D[0], y escribe en pipe_D_H[1], pipe_D_V[1], pipe_D_P[1] dependiendo su pedido.
+    // con un hilo (el principal) lee en forma no bloqueante de pipe_CC_D[0] y pipe_CV_D[0], y escribe en pipe_D_H[1], pipe_D_V[1], pipe_D_P[1] dependiendo su pedido.
     // con otro hilo (creado) espera por los pedidos de los cocineros en pipe_H_D[0], pipe_V_D[0], pipe_P_D[0] y escribe en pipe_D_C_H[1], pipe_D_C_V[1], pipe_D_C_P[1] para entregar el pedido a los clientes que estén esperando allí.
     pid_t pid_D;
     pid_D = fork();
@@ -212,15 +212,15 @@ int main() {
             if (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
             }
-            if (read(pipe_CN_D[0], &pedido, sizeof(int)) > 0) {
+            if (read(pipe_CC_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
             }
         }
 
         pthread_join(hilo_despachar_pedidos, NULL);
 
-        close(pipe_CN_D[0]);
-        close(pipe_CN_D[1]);
+        close(pipe_CC_D[0]);
+        close(pipe_CC_D[1]);
         close(pipe_CV_D[0]);
         close(pipe_CV_D[1]);
         close(pipe_D_H[1]);
@@ -235,12 +235,12 @@ int main() {
         exit(0);
     }
 
-    // proceso cliente normal: escribe en pipe_CN_D[1] y lee de pipe_D_CN_H[0], pipe_D_CN_V[0], pipe_D_CN_P[0] dependiendo su pedido.
+    // proceso cliente normal: escribe en pipe_CC_D[1] y lee de pipe_D_CN_H[0], pipe_D_CN_V[0], pipe_D_CN_P[0] dependiendo su pedido.
     pid_t pid_CN;
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         pid_CN = fork();
         if (pid_CN == 0) {
-            close(pipe_CN_D[0]);
+            close(pipe_CC_D[0]);
             close(pipe_CV_D[0]);
             close(pipe_CV_D[1]);
             close(pipe_D_H[0]);
@@ -259,17 +259,17 @@ int main() {
             srand(time(NULL)/(i+1) + getpid()*i);
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
-            printf("Cliente Normal: Pedido %d\n", pedido);
+            printf("Cliente Común: Pedido %d\n", pedido);
             // primero escribe en el pipe, y luego en la puerta, para que no haya problemas de race condition
             // donde el despachador haga la lectura no-bloqueante sobre el pipe antes de que el cliente haya 
             // escrito en él, bloqueándose en la lectura de la puerta en la vuelta del bucle.
-            write(pipe_CN_D[1], &pedido, sizeof(int));
+            write(pipe_CC_D[1], &pedido, sizeof(int));
             write(pipe_puerta[1], &pedido, sizeof(int));
             // pasa a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
-            printf("Cliente Normal: Marchándome contento\n");
+            printf("Cliente Común: Marchándome contento\n");
 
-            close(pipe_CN_D[1]);
+            close(pipe_CC_D[1]);
             close(pipe_D_C_H[0]);
             close(pipe_D_C_V[0]);
             close(pipe_D_C_P[0]);
@@ -284,8 +284,8 @@ int main() {
     for (int i = 0; i < NUM_CLIENTES_VIP; i++) {
         pid_CV = fork();
         if (pid_CV == 0) {
-            close(pipe_CN_D[0]);
-            close(pipe_CN_D[1]);
+            close(pipe_CC_D[0]);
+            close(pipe_CC_D[1]);
             close(pipe_CV_D[0]);
             close(pipe_D_H[0]);
             close(pipe_D_H[1]);
@@ -320,8 +320,8 @@ int main() {
         }
     }
 
-    close(pipe_CN_D[0]);
-    close(pipe_CN_D[1]);
+    close(pipe_CC_D[0]);
+    close(pipe_CC_D[1]);
     close(pipe_CV_D[0]);
     close(pipe_CV_D[1]);
     close(pipe_D_H[0]);
