@@ -48,8 +48,8 @@ struct msg_buffer {
 // el tipo 9 es para que el despachador le indique al cliente que su pedido de papas fritas está listo
 
 #define KEY 1234
-#define NUM_CLIENTES_COMUNES 16
-#define NUM_CLIENTES_VIP 14
+#define NUM_CLIENTES_COMUNES 13
+#define NUM_CLIENTES_VIP 2
 #define MSG_SIZE sizeof(struct msg_buffer) - sizeof(long)
 
 void* despachar_pedidos();
@@ -161,13 +161,11 @@ int main() {
         pid_CV = fork();
         if (pid_CV == 0) {
             int queue = msgget(KEY, 0666);
-
             srand(time(NULL)*i + getpid()/(i+1));
             msg.pedido = rand() % 3 + 1;
             msg.type = 1;
             printf("Cliente VIP: Pedido %d\n", msg.pedido);
             msgsnd(queue, &msg, MSG_SIZE, 0);
-
             switch (msg.pedido) {
                 case 1:
                     msgrcv(queue, &msg, MSG_SIZE, 7, 0);
@@ -190,13 +188,11 @@ int main() {
         pid_CC = fork();
         if (pid_CC == 0) {
             int queue = msgget(KEY, 0666);
-
             srand(time(NULL)/(i+1) + getpid()*i);
             msg.pedido = rand() % 3 + 1;
             msg.type = 2;
             printf("Cliente común: Pedido %d\n", msg.pedido);
             msgsnd(queue, &msg, MSG_SIZE, 0);
-            
             switch (msg.pedido) {
                 case 1:
                     msgrcv(queue, &msg, MSG_SIZE, 7, 0);
@@ -219,6 +215,9 @@ int main() {
     for (int i = 0; i < NUM_CLIENTES_COMUNES; i++) {
         wait(NULL);
     }
+
+    // borrar la cola de mensajes ahora que no hay más clientes que escriban en ella.
+    msgctl(queue, IPC_RMID, NULL);
 
     // forzar la interrupción del programa una vez que los clientes se hayan marchado, matando a todos los hijos y despues al padre.
     // el único propósito de esto es para que el programa no se quede bloqueado por culpa de los bucles infinitos de los empleados, y de esa forma, traben la ejecución del makefile.
