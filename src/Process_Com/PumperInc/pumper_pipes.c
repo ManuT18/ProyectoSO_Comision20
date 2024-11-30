@@ -27,17 +27,17 @@
  *
  * Un cliente llega a donde el despachador, le indica su pedido y espera a que el despachador le indique que su pedido está listo.
  * El despachador va a tener dos hilos: uno es para atender los pedidos que vengan de un cliente común o VIP, y otro hilo para entregarlos. Es importante que el despachador tenga ambos hilos dado que si un cliente llega y hace un pedido, el despachador debe atenderlo, indicarle a los cocineros que preparen el pedido, y luego seguir atendiendo otros clientes, mientras que en el otro hilo estará esperando a que los cocineros le entreguen el pedido.
- * El que un cliente sea común o VIP se modelará con que los VIPS hagan su pedido en un pipe distinto al de los comunes. De esta manera, el despachador deberá primero chequear el pipe VIP antes que el pipe común. De resto, los códigos son los mismos
+ * El que un cliente sea común o VIP se modelará con que los VIPS hagan su pedido en un pipe distinto al de los comunes. De esta manera, el despachador deberá primero chequear el pipe VIP antes que el pipe común. De resto, los códigos son los mismos.
+ * Se agrega un pipe más donde se modela una "puerta" por la que los clientes pasan para anunciar su llegada al despachador. Las escrituras en este pipe por parte de los clientes se hacen después de las escrituras en los pipes de los clientes, para evitar condiciones de carrera.
  *
  * El código para los pedidos será el siguiente:
  *      - 1: solo hamburguesa
  *      - 2: solo menú vegano
  *      - 3: solo papas fritas
- * 
  */
 
-#define NUM_CLIENTES_COMUNES 3
-#define NUM_CLIENTES_VIP 0
+#define NUM_CLIENTES_COMUNES 15
+#define NUM_CLIENTES_VIP 6
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,7 +64,7 @@ int pipe_devolucion[2]; // pipe para la comunicación entre los cocineros y Desp
 int pipe_D_C_H[2]; // pipe para la comunicación entre Despachador (D) y los clientes para hamburguesas
 int pipe_D_C_V[2]; // pipe para la comunicación entre Despachador (D) y los clientes para menú vegano
 int pipe_D_C_P[2]; // pipe para la comunicación entre Despachador (D) y los clientes para papas fritas
-int pipe_puerta[2]; // pipe para que los clientes se "anuncien" ante el despachador cuando llegan
+int pipe_puerta[2]; // pipe para que los clientes se "anuncien" ante el despachador cuando llegan.
 
 int main() {
     pipe(pipe_CN_D);
@@ -208,7 +208,6 @@ int main() {
         pthread_t hilo_despachar_pedidos;
         pthread_create(&hilo_despachar_pedidos, NULL, despachar_pedidos, NULL);
 
-        // podria usar un tercer pipe donde se anuncien los clientes
         while (read(pipe_puerta[0], &pedido, sizeof(int)) > 0) {
             if (read(pipe_CV_D[0], &pedido, sizeof(int)) > 0) {
                 atender_pedido(pedido);
@@ -261,6 +260,9 @@ int main() {
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
             printf("Cliente Normal: Pedido %d\n", pedido);
+            // primero escribe en el pipe, y luego en la puerta, para que no haya problemas de race condition
+            // donde el despachador haga la lectura no-bloqueante sobre el pipe antes de que el cliente haya 
+            // escrito en él, bloqueándose en la lectura de la puerta en la vuelta del bucle.
             write(pipe_CN_D[1], &pedido, sizeof(int));
             write(pipe_puerta[1], &pedido, sizeof(int));
             // pasa a una cola de espera por su pedido especifico
@@ -302,8 +304,8 @@ int main() {
             pedido = rand() % 3 + 1;
             // realiza el pedido al despachador
             printf("Cliente VIP: Pedido %d\n", pedido);
-            write(pipe_puerta[1], &pedido, sizeof(int));
             write(pipe_CV_D[1], &pedido, sizeof(int));
+            write(pipe_puerta[1], &pedido, sizeof(int));
             // se va a una cola de espera por su pedido especifico
             esperar_pedido(pedido);
             printf("Cliente VIP: Marchándome contento\n");
