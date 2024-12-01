@@ -9,18 +9,21 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-sem_t sem_ruedas, sem_chasis, sem_motor, sem_pintura, sem_extras, terminator;
+sem_t sem_ruedas, sem_chasis, sem_motor, sem_pintura, sem_extras, terminator, ciclar;
 pthread_mutex_t mutex;
 
 pthread_t threads[6];
 
-#define ITERATIONS 5
+#define ITERATIONS 7
 // cada cuatro ruedas hay un extra
+
 void *process_ruedas() {
     for (int i = 0; i < 2*ITERATIONS; i++) {
+        sem_wait(&ciclar);
         sem_wait(&sem_ruedas);
         pthread_mutex_lock(&mutex);
         printf("Rueda \n");
+        fflush(stdout);
         usleep(700000);
 
         fflush(stdout);
@@ -46,7 +49,6 @@ void *process_chasis() {
         fflush(stdout);
         pthread_mutex_unlock(&mutex);
         sem_post(&sem_motor);
-        
     }
     printf("### terminaron los chasis ###\n");
     fflush(stdout);
@@ -74,13 +76,6 @@ void *process_motor() {
 
 void *process_pinturaverde() {
     for (int i = 0; i < ITERATIONS; i++) {
-        sem_wait(&sem_pintura);
-        pthread_mutex_lock(&mutex);
-        printf("Pintura verde\n--------------------\n");
-        fflush(stdout);
-        usleep(700000);
-
-       
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores rojos y los extras ###\n");
             fflush(stdout);
@@ -91,22 +86,23 @@ void *process_pinturaverde() {
             pthread_exit(0);
         }
         
+        sem_wait(&sem_pintura);
+        pthread_mutex_lock(&mutex);
+        printf("Pintura verde\n--------------------\n");
+        fflush(stdout);
+        usleep(700000);
+
         pthread_mutex_unlock(&mutex);
         
         sem_post(&sem_extras);
+        sem_post(&sem_ruedas);
+        sem_post(&sem_ruedas);
     }
     return NULL;
 }
 
 void *process_pinturaroja() {
     for (int i = 0; i < ITERATIONS; i++) {
-        sem_wait(&sem_pintura);
-        pthread_mutex_lock(&mutex);
-        printf("Pintura roja\n--------------------\n");
-        fflush(stdout);
-        usleep(700000);
-
-
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores verdes y los extras ###\n");
             fflush(stdout);
@@ -117,38 +113,37 @@ void *process_pinturaroja() {
             pthread_exit(0);
         }
         
+        sem_wait(&sem_pintura);
+        pthread_mutex_lock(&mutex);
+        printf("Pintura roja\n--------------------\n");
+        fflush(stdout);
+        usleep(700000);
+
         pthread_mutex_unlock(&mutex);
         
         sem_post(&sem_extras);
+        sem_post(&sem_ruedas);
+        sem_post(&sem_ruedas);
     }
     
     return NULL;
 }
 
 void *process_extras() {
-    // "Una de cada dos motos es elegida para recibir equipamiento extra".
-    // Esto se "logra" con el if (i % 2 == 0) (es la varialbe `i` par?) en los procedimientos de pintura.
-    // Sin embargo, la variable i es local a cada procedimiento, por lo que no se puede asegurar 
-    // un intercalado coherente: si la primer moto la pintan de rojo, y la segunda de verde, ambas
-    // recibirán equipamiento extra porque la variable i era par en ambos procedimientos.
-    // Por lo tanto, a los efectos del enunciado, se sigue cumpliendo, y hasta puede que quede mejor así.
     for (int i = 0; i < ITERATIONS; i++) {
-        //recibe señal de semaforo del sector de pintura y la primera vez llama a ruedas nuevamente
         sem_wait(&sem_extras);
-        sem_post(&sem_ruedas);
-        sem_post(&sem_ruedas);
-        
-        //recibo señal del sector de pintura nuevamente para agregar extras
         sem_wait(&sem_extras);
         
         pthread_mutex_lock(&mutex);
         printf("Extras añadidos\n--------------------\n");
         fflush(stdout);
         usleep(700000);
-
+        
         pthread_mutex_unlock(&mutex);
-        sem_post(&sem_ruedas);
-        sem_post(&sem_ruedas);
+        sem_post(&ciclar);
+        sem_post(&ciclar);    
+        sem_post(&ciclar);
+        sem_post(&ciclar);
         
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores rojos y los pintores verdes ###\n");
@@ -174,6 +169,7 @@ int main(int argc, char const *argv[]) {
     sem_init(&sem_pintura, 0, 0);
     sem_init(&sem_extras, 0, 0);
     sem_init(&terminator, 0, 0);
+    sem_init(&ciclar, 0, 4);
 
     pthread_mutex_init(&mutex, NULL);
 
