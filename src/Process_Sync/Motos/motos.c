@@ -14,7 +14,7 @@ pthread_mutex_t mutex;
 
 pthread_t threads[6];
 
-#define ITERATIONS 9
+#define ITERATIONS 5
 // cada cuatro ruedas hay un extra
 void *process_ruedas() {
     for (int i = 0; i < 2*ITERATIONS; i++) {
@@ -25,6 +25,7 @@ void *process_ruedas() {
 
         fflush(stdout);
         pthread_mutex_unlock(&mutex);
+        
         sem_post(&sem_chasis);
     }
     sem_post(&terminator);
@@ -45,6 +46,7 @@ void *process_chasis() {
         fflush(stdout);
         pthread_mutex_unlock(&mutex);
         sem_post(&sem_motor);
+        
     }
     printf("### terminaron los chasis ###\n");
     fflush(stdout);
@@ -62,6 +64,7 @@ void *process_motor() {
 
         pthread_mutex_unlock(&mutex);
         sem_post(&sem_pintura);
+        
     }
     printf("### terminaron los motores ###\n");
     fflush(stdout);
@@ -77,22 +80,20 @@ void *process_pinturaverde() {
         fflush(stdout);
         usleep(700000);
 
-        if (i % 2 == 0) {
-            sem_post(&sem_extras);
-        } else {
-            if (sem_trywait(&terminator) == 0) {
-                printf("### terminando a los pintores rojos y los extras ###\n");
-                fflush(stdout);
-                pthread_cancel(threads[4]);
-                pthread_cancel(threads[5]);
-                printf("### terminaron las pinturas verdes ###\n");
-                fflush(stdout);
-                pthread_exit(0);
-            }
-            sem_post(&sem_ruedas);
-            sem_post(&sem_ruedas);
+       
+        if (sem_trywait(&terminator) == 0) {
+            printf("### terminando a los pintores rojos y los extras ###\n");
+            fflush(stdout);
+            pthread_cancel(threads[4]);
+            pthread_cancel(threads[5]);
+            printf("### terminaron las pinturas verdes ###\n");
+            fflush(stdout);
+            pthread_exit(0);
         }
+        
         pthread_mutex_unlock(&mutex);
+        
+        sem_post(&sem_extras);
     }
     return NULL;
 }
@@ -105,22 +106,20 @@ void *process_pinturaroja() {
         fflush(stdout);
         usleep(700000);
 
-        if (i % 2 == 0) {
-            sem_post(&sem_extras);
-        } else {
-            if (sem_trywait(&terminator) == 0) {
-                printf("### terminando a los pintores verdes y los extras ###\n");
-                fflush(stdout);
-                pthread_cancel(threads[3]);
-                pthread_cancel(threads[5]);
-                printf("### terminaron las pinturas rojas ###\n");
-                fflush(stdout);
-                pthread_exit(0);
-         }
-            sem_post(&sem_ruedas);
-            sem_post(&sem_ruedas);
+
+        if (sem_trywait(&terminator) == 0) {
+            printf("### terminando a los pintores verdes y los extras ###\n");
+            fflush(stdout);
+            pthread_cancel(threads[3]);
+            pthread_cancel(threads[5]);
+            printf("### terminaron las pinturas rojas ###\n");
+            fflush(stdout);
+            pthread_exit(0);
         }
+        
         pthread_mutex_unlock(&mutex);
+        
+        sem_post(&sem_extras);
     }
     
     return NULL;
@@ -134,7 +133,14 @@ void *process_extras() {
     // recibirán equipamiento extra porque la variable i era par en ambos procedimientos.
     // Por lo tanto, a los efectos del enunciado, se sigue cumpliendo, y hasta puede que quede mejor así.
     for (int i = 0; i < ITERATIONS; i++) {
+        //recibe señal de semaforo del sector de pintura y la primera vez llama a ruedas nuevamente
         sem_wait(&sem_extras);
+        sem_post(&sem_ruedas);
+        sem_post(&sem_ruedas);
+        
+        //recibo señal del sector de pintura nuevamente para agregar extras
+        sem_wait(&sem_extras);
+        
         pthread_mutex_lock(&mutex);
         printf("Extras añadidos\n--------------------\n");
         fflush(stdout);
