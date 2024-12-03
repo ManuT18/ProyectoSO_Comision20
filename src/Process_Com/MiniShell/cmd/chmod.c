@@ -27,7 +27,6 @@ int main (int argc, char **args) {
     mode_t mode = strtol(mode_str, 0, 8);
     char *file = args[2];
     printf("mode: %d\n", mode);
-    fflush(stdout);
 
     if (chmod(file, mode) != 0) {
         fprintf(stderr, "minishell: Error al cambiar los permisos del archivo\n");

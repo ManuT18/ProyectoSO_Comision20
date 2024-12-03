@@ -13,7 +13,6 @@ int main(int argc, char **args) {
     printf("show <archivo> - Mostrar el contenido de un archivo\n");
     printf("chmod <permisos> <archivo> - Cambiar los permisos de un archivo, especificados en formato string\n");
     printf("clear - Limpiar la pantalla\n");
-    fflush(stdout);
 
     return 0;
 }
