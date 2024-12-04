@@ -193,3 +193,4 @@ int main(int argc, char const *argv[]) {
     sem_destroy(&sem_extras);
 
     return 0;
+}
