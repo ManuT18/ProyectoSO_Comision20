@@ -14,7 +14,7 @@ pthread_mutex_t mutex;
 
 pthread_t threads[6];
 
-#define ITERATIONS 1
+#define ITERATIONS 10
 
 void *process_ruedas() {
     for (int i = 0; i < 2*ITERATIONS; i++) {
@@ -75,16 +75,6 @@ void *process_motor() {
 
 void *process_pinturaverde() {
     for (int i = 0; i < ITERATIONS; i++) {
-        if (sem_trywait(&terminator) == 0) {
-            printf("### terminando a los pintores rojos y los extras ###\n");
-            fflush(stdout);
-            pthread_cancel(threads[4]);
-            pthread_cancel(threads[5]);
-            printf("### terminaron las pinturas verdes ###\n");
-            fflush(stdout);
-            pthread_exit(0);
-        }
-        
         sem_wait(&sem_pintura);
         pthread_mutex_lock(&mutex);
         printf("Pintura verde\n--------------------\n");
@@ -96,22 +86,22 @@ void *process_pinturaverde() {
         sem_post(&sem_extras);
         sem_post(&sem_ruedas);
         sem_post(&sem_ruedas);
+        
+        if (sem_trywait(&terminator) == 0) {
+            printf("### terminando a los pintores rojos y los extras ###\n");
+            fflush(stdout);
+            pthread_cancel(threads[4]);
+            pthread_cancel(threads[5]);
+            printf("### terminaron las pinturas verdes ###\n");
+            fflush(stdout);
+            pthread_exit(0);
+        }
     }
     return NULL;
 }
 
 void *process_pinturaroja() {
     for (int i = 0; i < ITERATIONS; i++) {
-        if (sem_trywait(&terminator) == 0) {
-            printf("### terminando a los pintores verdes y los extras ###\n");
-            fflush(stdout);
-            pthread_cancel(threads[3]);
-            pthread_cancel(threads[5]);
-            printf("### terminaron las pinturas rojas ###\n");
-            fflush(stdout);
-            pthread_exit(0);
-        }
-        
         sem_wait(&sem_pintura);
         pthread_mutex_lock(&mutex);
         printf("Pintura roja\n--------------------\n");
@@ -123,6 +113,16 @@ void *process_pinturaroja() {
         sem_post(&sem_extras);
         sem_post(&sem_ruedas);
         sem_post(&sem_ruedas);
+        
+        if (sem_trywait(&terminator) == 0) {
+            printf("### terminando a los pintores verdes y los extras ###\n");
+            fflush(stdout);
+            pthread_cancel(threads[3]);
+            pthread_cancel(threads[5]);
+            printf("### terminaron las pinturas rojas ###\n");
+            fflush(stdout);
+            pthread_exit(0);
+        }
     }
     
     return NULL;
