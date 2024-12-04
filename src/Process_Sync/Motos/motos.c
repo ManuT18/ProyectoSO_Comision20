@@ -14,7 +14,7 @@ pthread_mutex_t mutex;
 
 pthread_t threads[6];
 
-#define ITERATIONS 1
+#define ITERATIONS 10
 
 void *process_ruedas() {
     for (int i = 0; i < 2*ITERATIONS; i++) {
@@ -27,7 +27,7 @@ void *process_ruedas() {
 
         fflush(stdout);
         pthread_mutex_unlock(&mutex);
-        
+
         sem_post(&sem_chasis);
     }
     sem_post(&terminator);
@@ -65,7 +65,7 @@ void *process_motor() {
 
         pthread_mutex_unlock(&mutex);
         sem_post(&sem_pintura);
-        
+
     }
     printf("### terminaron los motores ###\n");
     fflush(stdout);
@@ -75,6 +75,18 @@ void *process_motor() {
 
 void *process_pinturaverde() {
     for (int i = 0; i < ITERATIONS; i++) {
+        sem_wait(&sem_pintura);
+        pthread_mutex_lock(&mutex);
+        printf("Pintura verde\n--------------------\n");
+        fflush(stdout);
+        usleep(700000);
+
+        pthread_mutex_unlock(&mutex);
+
+        sem_post(&sem_extras);
+        sem_post(&sem_ruedas);
+        sem_post(&sem_ruedas);
+        
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores rojos y los extras ###\n");
             fflush(stdout);
@@ -84,24 +96,23 @@ void *process_pinturaverde() {
             fflush(stdout);
             pthread_exit(0);
         }
-        
+    }
+    return NULL;
+}
+void *process_pinturaroja() {
+    for (int i = 0; i < ITERATIONS; i++) {
         sem_wait(&sem_pintura);
         pthread_mutex_lock(&mutex);
-        printf("Pintura verde\n--------------------\n");
+        printf("Pintura roja\n--------------------\n");
         fflush(stdout);
         usleep(700000);
 
         pthread_mutex_unlock(&mutex);
-        
+
         sem_post(&sem_extras);
         sem_post(&sem_ruedas);
         sem_post(&sem_ruedas);
-    }
-    return NULL;
-}
-
-void *process_pinturaroja() {
-    for (int i = 0; i < ITERATIONS; i++) {
+        
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores verdes y los extras ###\n");
             fflush(stdout);
@@ -111,20 +122,8 @@ void *process_pinturaroja() {
             fflush(stdout);
             pthread_exit(0);
         }
-        
-        sem_wait(&sem_pintura);
-        pthread_mutex_lock(&mutex);
-        printf("Pintura roja\n--------------------\n");
-        fflush(stdout);
-        usleep(700000);
-
-        pthread_mutex_unlock(&mutex);
-        
-        sem_post(&sem_extras);
-        sem_post(&sem_ruedas);
-        sem_post(&sem_ruedas);
     }
-    
+
     return NULL;
 }
 
@@ -132,18 +131,18 @@ void *process_extras() {
     for (int i = 0; i < ITERATIONS; i++) {
         sem_wait(&sem_extras);
         sem_wait(&sem_extras);
-        
+
         pthread_mutex_lock(&mutex);
         printf("Extras añadidos\n--------------------\n");
         fflush(stdout);
         usleep(700000);
-        
+
         pthread_mutex_unlock(&mutex);
         sem_post(&ciclar);
         sem_post(&ciclar);    
         sem_post(&ciclar);
         sem_post(&ciclar);
-        
+
         if (sem_trywait(&terminator) == 0) {
             printf("### terminando a los pintores rojos y los pintores verdes ###\n");
             fflush(stdout);
@@ -194,4 +193,3 @@ int main(int argc, char const *argv[]) {
     sem_destroy(&sem_extras);
 
     return 0;
-}
