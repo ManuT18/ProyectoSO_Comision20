@@ -9,10 +9,9 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define REPETITIONS 10
-#define TIMES_RENOS_COMEBACK 5 // cuántas veces vacacionan los renos
+#define TIMES_RENOS_COMEBACK 3 // cuántas veces vacacionan los renos
 #define CANT_RENOS 9
-#define CANT_ELFOS 12
+#define CANT_ELFOS 28 // si no es multiplo de 3, van a quedar elfos sin atender
 
 sem_t sem_santa; // para que Santa se despierte. Tiene un comportamiento preferiblemente binario (ver la función actividad_santa para entender por qué no es exactamente binario).
 sem_t sem_renos_grupo; // indica la cantidad máxima de renos y sirve para sincronizar los grupos de nueve renos con los que Santa va a atender, así como para identificar al último reno encargado de despertarlo
@@ -27,26 +26,26 @@ pthread_mutex_t mutex_renos;
 pthread_mutex_t mutex_elfos;
 
 void *actividad_santa() {
-    for (int i = 0; i < REPETITIONS; i++) {
+    while(1) {
         sem_wait(&sem_santa);
-        printf("\nSanta Claus: Despierta\n");
+        printf("\nSanta Claus: Despierta\n\n");
 
         // si están los 9 renos esperando...
         if (sem_trywait(&sem_renos_grupo) == -1) {
+            printf("Santa Claus: Tengo renos esperándome\n");
             printf("Santa Claus: Preparando trineo\n");
-
             printf("Santa Claus: Trineo listo\n");
             printf("Santa Claus: Entregando regalos\n");
             printf("Santa Claus: Volverá en un momento\n");
-            
             for (int i = 5; i > 0; i--) {
+                sleep(1);
                 printf(". ");
                 fflush(stdout);
             }
-
             printf("\n\nSanta Claus: Volvió\n\n");
 
-            // si aparecieron elfos mientras estaba viajando, hicieron un signal de más en sem_santa. Debo consumirlo, total los voy a atender cuando vuelva
+            // si aparecieron elfos mientras estaba viajando, hicieron un signal de más en sem_santa. Debo consumirlo, total los voy a atender cuando vuelva.
+            // Nota: el enunciado no aclara que los elfos no puedan acudir a Santa mientras éste esté viajando
             if (sem_trywait(&sem_elfos_grupo) == -1) {
                 sem_wait(&sem_santa);
             } else {
@@ -63,15 +62,18 @@ void *actividad_santa() {
             }
 
         } else {
+            printf("Santa Claus: Me desperté y no hay renos esperándome\n");
             sem_post(&sem_renos_grupo);
         }
 
         // si hay 3 elfos esperando...
         if (sem_trywait((&sem_elfos_grupo)) == -1) {
-            printf("\nSanta Claus: Ayudando a los elfos\n");
+            printf("Santa Claus: Tengo elfos esperándome\n");
+            printf("Santa Claus: Ayudando a los elfos\n");
 
             for (int i = 0; i < 3; i++) {
                 printf("\nSanta Claus: Ayudando al %i° elfo \n", i + 1);
+                sleep(1);
                 sem_post(&sem_elfos_grupo);
             }
 
@@ -81,13 +83,13 @@ void *actividad_santa() {
                 sem_post(&sem_max_elfos);
             }
         } else {
+            printf("Santa Claus: No hay elfos esperándome\n");
             sem_post(&sem_elfos_grupo);
         }
 
         printf("\nSanta Claus: Volviendo a dormir\n\n");
     }
 
-    printf("\nSanta Claus se ha jubilado, ya no trabajará\n\n");
     // avisar a los renos y a los elfos que dejen de existir
     /*
     for (int i = 0; i < CANT_RENOS; i++) {
@@ -106,12 +108,14 @@ void *actividad_reno(void *args) {
     id_reno++;
 
     sem_wait(&sem_max_renos);
-    printf("\nReno %i volvió de vacaciones\n", (int)id_reno);
 
     pthread_mutex_lock(&mutex_renos);
 
+    printf("\nReno %i volvió de vacaciones\n", (int)id_reno);
+    sleep(1);
     sem_wait(&sem_renos_grupo);
 
+    // si soy el último reno de un grupo de nueve, acudimos a Santa
     if (sem_trywait(&sem_renos_grupo) == -1) {
         printf("\nYa somos 9 renos, vamos a acudir a Santa\n");
         sem_post(&sem_santa);
@@ -132,6 +136,7 @@ void *actividad_elfo(void *args) {
 
     pthread_mutex_lock(&mutex_elfos);
     printf("\nElfo %i necesita ayuda\n", (int)id_elfo);
+    sleep(1);
 
     sem_wait(&sem_elfos_grupo);
     // si soy el último elfo de un grupo de tres, acudimos a Santa
