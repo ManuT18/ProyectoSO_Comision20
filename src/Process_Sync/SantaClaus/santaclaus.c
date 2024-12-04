@@ -125,12 +125,15 @@ void *actividad_reno(void *args) {
 }
 
 void *actividad_elfo(void *args) {
+    int id_elfo = (int)(size_t)args;
+    id_elfo++;
+
     sem_wait(&sem_max_elfos);
 
     pthread_mutex_lock(&mutex_elfos);
+    printf("\nElfo %i necesita ayuda\n", (int)id_elfo);
 
     sem_wait(&sem_elfos_grupo);
-
     // si soy el último elfo de un grupo de tres, acudimos a Santa
     if (sem_trywait(&sem_elfos_grupo) == -1) {
         printf("\nYa somos 3 elfos, vamos a acudir a Santa\n");
