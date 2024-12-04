@@ -115,6 +115,7 @@ int main() {
         // la lectura accede al mensaje cuyo tipo sea <= |-2| y a la vez sea el menor de todos.
         // es decir, si hay mensajes de tipo 1 y 2, accede primero a los de tipo 1 y luego a los de tipo 2.
         // si solo hay mensajes de tipo 2, los accederá de igual forma ya que cumplen la condición.
+        // este bucle tiene un efecto inesperado en Raspbian OS. Favor de leer el informe.
         while (msgrcv(queue, &msg, MSG_SIZE, -2, 0) != -1) {
             if (msg.type == 1) {
                 printf("Despachador: Pedido VIP de tipo %d\n", msg.pedido);
